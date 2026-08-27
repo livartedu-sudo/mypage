@@ -16,8 +16,7 @@
     <div class="max-w-xl mx-auto bg-white min-h-screen shadow-md relative">
         
         <!-- 상단 헤더 -->
-        <header class="bg-blue-700 text-white p-4 flex justify-between items-center sticky top-0 z-10">
-            <!-- [수정됨] 기본 타이틀 -->
+        <header class="bg-blue-700 text-white p-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
             <h1 class="font-bold text-lg" id="headerTitle">접객서비스 모니터링</h1>
             <button id="toggleBtn" onclick="switchView()" class="bg-blue-900 hover:bg-blue-800 text-white text-sm py-1.5 px-3 rounded shadow transition-colors font-medium">
                 현황 보기
@@ -33,18 +32,59 @@
                 <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">매장명</label>
-                            <input type="text" id="storeName" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 강남본점" required>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">구분</label>
+                            <select id="division" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                                <option value="">선택</option>
+                                <option value="리빙">리빙</option>
+                                <option value="집테리어">집테리어</option>
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
-                            <input type="datetime-local" id="visitTime" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">매장명</label>
+                            <select id="storeName" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                                <option value="">매장 선택</option>
+                                <optgroup label="백화점 (16점)">
+                                    <option value="더현서">더현서</option>
+                                    <option value="무역">무역</option>
+                                    <option value="목동">목동</option>
+                                    <option value="천호">천호</option>
+                                    <option value="미아">미아</option>
+                                    <option value="신촌">신촌</option>
+                                    <option value="가산">가산</option>
+                                    <option value="판교">판교</option>
+                                    <option value="킨텍스">킨텍스</option>
+                                    <option value="중동">중동</option>
+                                    <option value="송도">송도</option>
+                                    <option value="김포">김포</option>
+                                    <option value="스페이스원">스페이스원</option>
+                                    <option value="충청">충청</option>
+                                    <option value="대구">대구</option>
+                                    <option value="대전아울렛">대전아울렛</option>
+                                </optgroup>
+                                <optgroup label="로드샵 (11점)">
+                                    <option value="강남">강남</option>
+                                    <option value="용산">용산</option>
+                                    <option value="수원">수원</option>
+                                    <option value="고양">고양</option>
+                                    <option value="용인">용인</option>
+                                    <option value="기흥">기흥</option>
+                                    <option value="대전">대전</option>
+                                    <option value="울산">울산</option>
+                                    <option value="광주">광주</option>
+                                    <option value="부산">부산</option>
+                                    <option value="동부산">동부산</option>
+                                </optgroup>
+                            </select>
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
+                        <input type="datetime-local" id="visitTime" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 사번</label>
-                            <input type="text" id="empId" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 2026001" pattern="[0-9]{7}" title="7자리 숫자를 입력하세요" required>
+                            <input type="text" id="empId" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: v123456" required>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 성명</label>
@@ -63,18 +103,13 @@
                     </select>
                 </section>
 
-                <!-- 척도 안내 -->
-                <div id="scaleInfo" class="hidden bg-gray-100 p-3 rounded text-sm text-gray-700 border border-gray-200">
-                    <span class="font-bold text-blue-700">※ 평가 척도 안내</span><br>
-                    1점(미흡) ↔ 5점(우수) / N/A: 해당 없음 (평균 산출 시 분모에서 제외)
-                </div>
-
+                <!-- 문항 영역 -->
                 <div id="form1_container" class="hidden space-y-6"></div>
                 <div id="form2_container" class="hidden space-y-6"></div>
 
                 <!-- 평가자 의견 & 제출 -->
                 <section id="feedback_container" class="hidden pt-4 border-t-2 border-gray-200">
-                    <label class="block font-bold text-gray-800 mb-2">평가자 의견 <span class="text-sm font-normal text-gray-500">(우수/미흡, 서비스 개선 필요 사항 등)</span></label>
+                    <label class="block font-bold text-gray-800 mb-2">평가자 의견 <span class="text-sm font-normal text-gray-500">(우수/미흡 등)</span></label>
                     <textarea id="feedbackText" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="자유롭게 주관식 의견을 작성해주세요."></textarea>
                     
                     <button type="submit" id="submitBtn" class="mt-6 w-full bg-blue-700 text-white font-bold py-4 rounded-lg shadow hover:bg-blue-800 transition-colors text-lg">
@@ -89,7 +124,6 @@
         <!-- ========================================== -->
         <div id="dashboard_view" class="hidden p-4 space-y-6 bg-gray-50 min-h-screen">
             
-            <!-- 대시보드 탭 버튼 및 제목 -->
             <div class="space-y-4">
                 <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
                     <button id="tabBtn1" onclick="switchDashboardTab('form1')" class="flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors">
@@ -99,9 +133,47 @@
                         접객서비스
                     </button>
                 </div>
-                <h2 id="dashboardTypeTitle" class="text-xl font-bold text-gray-800 border-b-2 border-gray-300 pb-2">
-                    웰컴존·상담존 모니터링 현황
-                </h2>
+                
+                <!-- [수정됨] 대시보드 타이틀 및 필터 (한 줄로 원상복구) -->
+                <div class="flex justify-between items-center border-b-2 border-gray-300 pb-2 gap-2">
+                    <h2 id="dashboardTypeTitle" class="text-lg font-bold text-gray-800 whitespace-nowrap">
+                        웰컴존·상담존 모니터링 현황
+                    </h2>
+                    <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
+                        <option value="all">전체 매장 (통합)</option>
+                        <optgroup label="백화점">
+                            <option value="더현서">더현서</option>
+                            <option value="무역">무역</option>
+                            <option value="목동">목동</option>
+                            <option value="천호">천호</option>
+                            <option value="미아">미아</option>
+                            <option value="신촌">신촌</option>
+                            <option value="가산">가산</option>
+                            <option value="판교">판교</option>
+                            <option value="킨텍스">킨텍스</option>
+                            <option value="중동">중동</option>
+                            <option value="송도">송도</option>
+                            <option value="김포">김포</option>
+                            <option value="스페이스원">스페이스원</option>
+                            <option value="충청">충청</option>
+                            <option value="대구">대구</option>
+                            <option value="대전아울렛">대전아울렛</option>
+                        </optgroup>
+                        <optgroup label="로드샵">
+                            <option value="강남">강남</option>
+                            <option value="용산">용산</option>
+                            <option value="수원">수원</option>
+                            <option value="고양">고양</option>
+                            <option value="용인">용인</option>
+                            <option value="기흥">기흥</option>
+                            <option value="대전">대전</option>
+                            <option value="울산">울산</option>
+                            <option value="광주">광주</option>
+                            <option value="부산">부산</option>
+                            <option value="동부산">동부산</option>
+                        </optgroup>
+                    </select>
+                </div>
             </div>
 
             <!-- 집계 카드 -->
@@ -116,7 +188,6 @@
                 </div>
             </div>
 
-            <!-- 요약 차트 영역 -->
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                 <h3 class="font-bold text-gray-800 mb-4">구분별 평균 점수 요약 (100점 환산)</h3>
                 <div class="h-64">
@@ -124,29 +195,53 @@
                 </div>
             </div>
 
-            <!-- 문항별 상세 점수 영역 -->
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                 <h3 class="font-bold text-gray-800 mb-4">세부 항목별 평균 점수 (100점 환산)</h3>
                 <div id="detailedScoresList" class="space-y-4">
-                    <!-- 자바스크립트로 리스트가 자동 생성됩니다 -->
+                    <!-- 자바스크립트로 생성 -->
                 </div>
             </div>
 
-            <!-- 피드백 영역 -->
+            <!-- 모니터링 내역 리스트 -->
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                <h3 class="font-bold text-gray-800 mb-4">최근 평가자 의견</h3>
-                <div id="feedbackList" class="space-y-3">
+                <h3 class="font-bold text-gray-800 mb-4">최근 모니터링 내역</h3>
+                <div id="recentEvalList" class="space-y-2">
                     <p class="text-sm text-gray-400 text-center py-4">등록된 평가 데이터가 없습니다.</p>
                 </div>
             </div>
 
         </div>
 
+        <!-- ========================================== -->
+        <!-- 3. 관리자 화면 (숨김 처리) -->
+        <!-- ========================================== -->
+        <div id="admin_view" class="hidden p-4 space-y-4 bg-gray-50 min-h-screen">
+            <div class="flex justify-between items-center mb-4 border-b-2 border-gray-300 pb-3">
+                <h2 class="text-xl font-bold text-red-700">관리자 페이지 (Raw Data)</h2>
+                <button onclick="closeAdmin()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm shadow">닫기</button>
+            </div>
+            
+            <div id="adminListContainer" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <ul id="adminList" class="divide-y divide-gray-200">
+                    <!-- 리스트 삽입 -->
+                </ul>
+            </div>
+
+            <div id="adminDetailContainer" class="hidden space-y-4">
+                <button onclick="backToAdminList()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded text-sm font-bold shadow-sm hover:bg-gray-300">← 목록으로 돌아가기</button>
+                <div id="adminDetailContent" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- 관리자 진입 버튼 (하단) -->
+        <footer class="text-center py-8">
+            <button onclick="checkAdminPassword()" class="text-xs text-gray-300 hover:text-gray-500 underline transition-colors">관리자 전용 페이지</button>
+        </footer>
+
     </div>
 
     <!-- 스크립트 로직 -->
     <script>
-        // Supabase 연동 키 
         const SUPABASE_URL = 'https://agysoivrjsbbtiqlsxud.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFneXNvaXZyanNiYnRpcWxzeHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3OTA3NzIsImV4cCI6MjEwMzM2Njc3Mn0.pMfOlCkNeF1pbuyTUHBzOgC5FziWOeXeKMTH16vARJw';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -158,25 +253,113 @@
         async function switchView() {
             const formView = document.getElementById('form_view');
             const dashboardView = document.getElementById('dashboard_view');
+            const adminView = document.getElementById('admin_view');
             const btn = document.getElementById('toggleBtn');
             const title = document.getElementById('headerTitle');
 
-            if (currentView === 'form') {
+            if (currentView === 'form' || currentView === 'admin') {
                 formView.classList.add('hidden');
+                adminView.classList.add('hidden');
                 dashboardView.classList.remove('hidden');
                 btn.innerText = '평가 작성하기';
-                // [수정됨] 대시보드 화면일 때 제목
                 title.innerText = '모니터링 현황';
                 currentView = 'dashboard';
                 await loadDashboardData();
             } else {
                 dashboardView.classList.add('hidden');
+                adminView.classList.add('hidden');
                 formView.classList.remove('hidden');
                 btn.innerText = '현황 보기';
-                // [수정됨] 폼 화면일 때 제목
                 title.innerText = '접객서비스 모니터링';
                 currentView = 'form';
             }
+        }
+
+        function checkAdminPassword() {
+            const pw = prompt('관리자 비밀번호를 입력하세요:');
+            if (pw === '3480') {
+                openAdminView();
+            } else if (pw !== null) {
+                alert('비밀번호가 일치하지 않습니다.');
+            }
+        }
+
+        async function openAdminView() {
+            document.getElementById('form_view').classList.add('hidden');
+            document.getElementById('dashboard_view').classList.add('hidden');
+            document.getElementById('admin_view').classList.remove('hidden');
+            
+            document.getElementById('headerTitle').innerText = '관리자 시스템';
+            document.getElementById('toggleBtn').innerText = '현황 보기';
+            currentView = 'admin';
+
+            document.getElementById('adminDetailContainer').classList.add('hidden');
+            document.getElementById('adminListContainer').classList.remove('hidden');
+
+            const listEl = document.getElementById('adminList');
+            listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">데이터를 불러오는 중입니다...</p>';
+
+            const { data, error } = await supabaseClient.from('evaluations').select('*').order('created_at', { ascending: false });
+            if (error) {
+                alert("데이터 로드 실패");
+                return;
+            }
+            
+            allDashboardData = data || [];
+            
+            if (allDashboardData.length === 0) {
+                listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">제출된 평가가 없습니다.</p>';
+                return;
+            }
+
+            listEl.innerHTML = allDashboardData.map(d => `
+                <li class="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center transition-colors" onclick="showAdminDetail(${d.id})">
+                    <div>
+                        <span class="font-bold text-gray-800 block mb-1">[${d.division || '구분없음'}] ${d.store_name} - ${d.emp_name}</span>
+                        <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">${d.eval_type === 'form1' ? '웰컴/상담존' : '접객서비스'}</span>
+                        <span class="text-xs text-gray-400 ml-1">${new Date(d.visit_time).toLocaleString()}</span>
+                    </div>
+                    <span class="text-blue-700 font-bold text-lg">${d.total_score}점</span>
+                </li>
+            `).join('');
+        }
+
+        function showAdminDetail(id) {
+            const evalData = allDashboardData.find(d => d.id === id);
+            if(!evalData) return;
+
+            document.getElementById('adminListContainer').classList.add('hidden');
+            document.getElementById('adminDetailContainer').classList.remove('hidden');
+
+            const detailContent = document.getElementById('adminDetailContent');
+            const typeName = evalData.eval_type === 'form1' ? '웰컴존·상담존 모니터링' : '판매사원 접객·배웅 서비스 모니터링';
+            
+            let html = `
+                <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-sm space-y-2 mb-4">
+                    <p><strong>구분:</strong> ${evalData.division || '미입력'}</p>
+                    <p><strong>매장명:</strong> ${evalData.store_name}</p>
+                    <p><strong>방문일시:</strong> ${new Date(evalData.visit_time).toLocaleString()}</p>
+                    <p><strong>평가자:</strong> ${evalData.emp_name} (사번: ${evalData.emp_id})</p>
+                    <p><strong>평가구분:</strong> ${typeName}</p>
+                    <p><strong>종합점수:</strong> <span class="text-red-700 font-bold text-lg">${evalData.total_score}점</span></p>
+                    <p class="pt-2 border-t border-red-200 mt-2"><strong>평가자 의견:</strong> <br>${evalData.feedback || '없음'}</p>
+                </div>
+                <!-- 원시 데이터 답안지 영역 -->
+                <div id="admin_form_container" class="space-y-6 pt-4"></div>
+            `;
+            detailContent.innerHTML = html;
+
+            const questions = evalData.eval_type === 'form1' ? questionsForm1 : questionsForm2;
+            renderQuestions('admin_form_container', questions, evalData.raw_scores || {});
+        }
+
+        function backToAdminList() {
+            document.getElementById('adminDetailContainer').classList.add('hidden');
+            document.getElementById('adminListContainer').classList.remove('hidden');
+        }
+        
+        function closeAdmin() {
+            switchView(); 
         }
 
         function switchDashboardTab(type) {
@@ -193,7 +376,7 @@
             } else {
                 btn2.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
                 btn1.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
-                typeTitle.innerText = "판매사원 접객·배웅 서비스 현황";
+                typeTitle.innerText = "판매사원 접객·배웅 서비스 모니터링 현황";
             }
 
             updateDashboardUI();
@@ -203,7 +386,6 @@
             const type = document.getElementById('evalType').value;
             document.getElementById('form1_container').classList.toggle('hidden', type !== 'form1');
             document.getElementById('form2_container').classList.toggle('hidden', type !== 'form2');
-            document.getElementById('scaleInfo').classList.toggle('hidden', type === '');
             document.getElementById('feedback_container').classList.toggle('hidden', type === '');
         }
 
@@ -233,12 +415,22 @@
             { id: "f2_q10", cat: "용모/태도", title: "톤앤매너", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?" }
         ];
 
-        function renderQuestions(containerId, questions) {
+        function renderQuestions(containerId, questions, savedAnswers = null) {
             const container = document.getElementById(containerId);
-            let html = '';
+            const isReadOnly = savedAnswers !== null;
+            
+            let html = `
+            <div class="flex justify-between text-xs font-bold text-gray-500 mb-4 px-2 text-center bg-gray-50 rounded py-2">
+                <div><span class="text-red-500 font-extrabold text-sm block">1점</span>매우 부정</div>
+                <div class="flex items-center text-xl text-gray-400">↔</div>
+                <div><span class="text-blue-600 font-extrabold text-sm block">5점</span>매우 긍정</div>
+            </div>`;
+
             questions.forEach((q, index) => {
+                const ans = isReadOnly ? savedAnswers[q.id] : null; 
+
                 html += `
-                <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4">
+                <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4 ${isReadOnly ? 'opacity-95' : ''}">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${q.cat}</span>
                         <h3 class="font-bold text-gray-800">${index + 1}. ${q.title}</h3>
@@ -246,14 +438,14 @@
                     <p class="text-sm text-gray-600 mb-4">${q.desc}</p>
                     <div class="flex justify-between gap-1">
                         ${[1,2,3,4,5].map(score => `
-                        <label class="flex-1 text-center cursor-pointer">
-                            <input type="radio" name="${q.id}" value="${score}" class="peer sr-only">
-                            <div class="py-2 border border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-gray-50 font-medium transition-colors">${score}</div>
+                        <label class="flex-1 text-center ${isReadOnly ? '' : 'cursor-pointer'}">
+                            <input type="radio" name="${isReadOnly ? 'admin_'+q.id : q.id}" value="${score}" class="peer sr-only" ${isReadOnly ? 'disabled' : ''} ${ans === String(score) ? 'checked' : ''}>
+                            <div class="py-2 border border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 ${isReadOnly ? '' : 'hover:bg-gray-50'} font-medium transition-colors">${score}</div>
                         </label>
                         `).join('')}
-                        <label class="flex-1 text-center cursor-pointer">
-                            <input type="radio" name="${q.id}" value="NA" class="peer sr-only">
-                            <div class="py-2 border border-gray-300 rounded peer-checked:bg-gray-500 peer-checked:text-white peer-checked:border-gray-500 hover:bg-gray-50 text-sm font-medium flex items-center justify-center transition-colors">N/A</div>
+                        <label class="flex-1 text-center ${isReadOnly ? '' : 'cursor-pointer'}">
+                            <input type="radio" name="${isReadOnly ? 'admin_'+q.id : q.id}" value="NA" class="peer sr-only" ${isReadOnly ? 'disabled' : ''} ${ans === 'NA' ? 'checked' : ''}>
+                            <div class="py-2 border border-gray-300 rounded peer-checked:bg-gray-500 peer-checked:text-white peer-checked:border-gray-500 ${isReadOnly ? '' : 'hover:bg-gray-50'} text-xs font-medium flex items-center justify-center transition-colors break-keep">확인 불가</div>
                         </label>
                     </div>
                 </div>`;
@@ -264,7 +456,6 @@
         renderQuestions('form1_container', questionsForm1);
         renderQuestions('form2_container', questionsForm2);
 
-        // 제출 로직 (Raw Data 수집)
         async function handleSubmit(event) {
             event.preventDefault();
 
@@ -301,7 +492,7 @@
             }
 
             if (totalValidCount === 0) {
-                alert('모든 문항이 N/A 처리되어 점수를 산출할 수 없습니다.');
+                alert('모든 문항이 확인 불가(N/A) 처리되어 점수를 산출할 수 없습니다.');
                 return;
             }
 
@@ -317,6 +508,7 @@
             }
 
             const payload = {
+                division: document.getElementById('division').value,
                 store_name: document.getElementById('storeName').value,
                 visit_time: document.getElementById('visitTime').value,
                 emp_id: document.getElementById('empId').value,
@@ -369,21 +561,28 @@
         }
 
         function updateDashboardUI() {
-            const targetData = allDashboardData.filter(d => d.eval_type === currentDashboardTab);
+            const filterStore = document.getElementById('dashboardStoreFilter').value;
+            
+            const targetData = allDashboardData.filter(d => {
+                const matchTab = d.eval_type === currentDashboardTab;
+                const matchStore = (filterStore === 'all' || d.store_name === filterStore);
+                return matchTab && matchStore;
+            });
+
             const detailedContainer = document.getElementById('detailedScoresList');
+            const recentListContainer = document.getElementById('recentEvalList');
 
             if (targetData.length === 0) {
                 document.getElementById('totalCount').innerText = '0건';
                 document.getElementById('totalAvg').innerText = '0점';
-                document.getElementById('feedbackList').innerHTML = '<p class="text-sm text-gray-400 text-center py-4">등록된 평가 데이터가 없습니다.</p>';
                 detailedContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">평가 데이터가 없습니다.</p>';
+                recentListContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">등록된 평가 데이터가 없습니다.</p>';
                 
                 const emptyLabels = currentDashboardTab === 'form1' ? ['웰컴존', '상담존', '상황별 운영'] : ['고객인지/입점', '탐색', '상담/연결', '배웅', '용모/태도'];
                 renderChart(emptyLabels, Array(emptyLabels.length).fill(0));
                 return;
             }
 
-            // 1) 전체 건수 및 평균 
             const totalCount = targetData.length;
             const totalScoreSum = targetData.reduce((acc, cur) => acc + cur.total_score, 0);
             const overallAvg = Math.round(totalScoreSum / totalCount);
@@ -391,7 +590,6 @@
             document.getElementById('totalCount').innerText = `${totalCount}건`;
             document.getElementById('totalAvg').innerText = `${overallAvg}점`;
 
-            // 2) 탭에 맞는 질문 세팅 및 차트 데이터 집계
             const questions = currentDashboardTab === 'form1' ? questionsForm1 : questionsForm2;
             let categories = currentDashboardTab === 'form1' 
                 ? ['웰컴존', '상담존', '상황별 운영'] 
@@ -400,7 +598,6 @@
                 ? ['웰컴존', '상담존', '상황별 운영'] 
                 : ['고객인지/입점', '탐색', '상담/연결', '배웅', '용모/태도'];
 
-            // 구조화: 항목별 점수를 모을 객체 세팅
             const itemAgg = {};
             questions.forEach(q => {
                 if (!itemAgg[q.cat]) itemAgg[q.cat] = { items: [], catSum: 0, catCount: 0 };
@@ -413,16 +610,12 @@
                         const val = evalData.raw_scores[q.id];
                         if (val && val !== 'NA') {
                             const scoreNum = parseInt(val);
-                            
-                            // 세부 항목 합산
                             const catData = itemAgg[q.cat];
                             const itemData = catData.items.find(i => i.id === q.id);
                             if(itemData) {
                                 itemData.sum += scoreNum;
                                 itemData.count++;
                             }
-                            
-                            // 구분(카테고리) 합산
                             catData.catSum += scoreNum;
                             catData.catCount++;
                         }
@@ -430,7 +623,6 @@
                 }
             });
 
-            // 3) 차트 그리기
             const chartScores = categories.map(c => {
                 return (itemAgg[c] && itemAgg[c].catCount > 0) 
                     ? Math.round((itemAgg[c].catSum / itemAgg[c].catCount) * 20) 
@@ -438,7 +630,6 @@
             });
             renderChart(chartLabels, chartScores);
 
-            // 4) 세부 항목별 렌더링 HTML 생성
             let detailedHtml = '';
             categories.forEach(cat => {
                 const catData = itemAgg[cat];
@@ -471,23 +662,12 @@
             });
             detailedContainer.innerHTML = detailedHtml;
 
-            // 5) 피드백 렌더링
-            const feedbackContainer = document.getElementById('feedbackList');
-            const validFeedbacks = targetData.filter(d => d.feedback && d.feedback.trim() !== '');
-
-            if (validFeedbacks.length === 0) {
-                feedbackContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">작성된 평가자 의견이 없습니다.</p>';
-            } else {
-                feedbackContainer.innerHTML = validFeedbacks.slice(0, 10).map(f => `
-                    <div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-bold text-blue-700">${f.store_name} (${f.emp_name})</span>
-                            <span class="text-xs text-gray-500">${new Date(f.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <p class="text-gray-700 whitespace-pre-wrap">${f.feedback}</p>
-                    </div>
-                `).join('');
-            }
+            recentListContainer.innerHTML = targetData.slice(0, 15).map(d => `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200 text-sm">
+                    <span class="font-bold text-gray-800">[${d.division || '-'}] ${d.store_name} - ${d.emp_name}</span>
+                    <span class="text-blue-700 font-semibold">${d.total_score}점</span>
+                </div>
+            `).join('');
         }
 
         function renderChart(labels, chartData) {
