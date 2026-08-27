@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>접객서비스 모니터링 및 대시보드</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 pb-20">
+
+    <div class="max-w-xl mx-auto bg-white min-h-screen shadow-md relative">
+        
+        <!-- 상단 헤더 -->
+        <header class="bg-blue-700 text-white p-4 flex justify-between items-center sticky top-0 z-10">
+            <!-- [수정됨] 기본 타이틀 -->
+            <h1 class="font-bold text-lg" id="headerTitle">접객서비스 모니터링</h1>
+            <button id="toggleBtn" onclick="switchView()" class="bg-blue-900 hover:bg-blue-800 text-white text-sm py-1.5 px-3 rounded shadow transition-colors font-medium">
+                현황 보기
+            </button>
+        </header>
+
+        <!-- ========================================== -->
+        <!-- 1. 평가 폼 화면 -->
+        <!-- ========================================== -->
+        <div id="form_view">
+            <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6">
+                <!-- 기본 정보 -->
+                <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">매장명</label>
+                            <input type="text" id="storeName" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 강남본점" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
+                            <input type="datetime-local" id="visitTime" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 사번</label>
+                            <input type="text" id="empId" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 2026001" pattern="[0-9]{7}" title="7자리 숫자를 입력하세요" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 성명</label>
+                            <input type="text" id="empName" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 홍길동" required>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 평가 종류 선택 -->
+                <section>
+                    <label class="block text-base font-bold text-gray-800 mb-2">어떤 평가를 진행하시겠습니까?</label>
+                    <select id="evalType" onchange="toggleEvalForm()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm" required>
+                        <option value="">-- 평가 종류 선택 --</option>
+                        <option value="form1">1. 웰컴존·상담존 모니터링 평가</option>
+                        <option value="form2">2. 판매사원 접객·배웅 서비스 수준 평가</option>
+                    </select>
+                </section>
+
+                <!-- 척도 안내 -->
+                <div id="scaleInfo" class="hidden bg-gray-100 p-3 rounded text-sm text-gray-700 border border-gray-200">
+                    <span class="font-bold text-blue-700">※ 평가 척도 안내</span><br>
+                    1점(미흡) ↔ 5점(우수) / N/A: 해당 없음 (평균 산출 시 분모에서 제외)
+                </div>
+
+                <div id="form1_container" class="hidden space-y-6"></div>
+                <div id="form2_container" class="hidden space-y-6"></div>
+
+                <!-- 평가자 의견 & 제출 -->
+                <section id="feedback_container" class="hidden pt-4 border-t-2 border-gray-200">
+                    <label class="block font-bold text-gray-800 mb-2">평가자 의견 <span class="text-sm font-normal text-gray-500">(우수/미흡, 서비스 개선 필요 사항 등)</span></label>
+                    <textarea id="feedbackText" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="자유롭게 주관식 의견을 작성해주세요."></textarea>
+                    
+                    <button type="submit" id="submitBtn" class="mt-6 w-full bg-blue-700 text-white font-bold py-4 rounded-lg shadow hover:bg-blue-800 transition-colors text-lg">
+                        평가 제출하기
+                    </button>
+                </section>
+            </form>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 2. 대시보드 화면 -->
+        <!-- ========================================== -->
+        <div id="dashboard_view" class="hidden p-4 space-y-6 bg-gray-50 min-h-screen">
+            
+            <!-- 대시보드 탭 버튼 및 제목 -->
+            <div class="space-y-4">
+                <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
+                    <button id="tabBtn1" onclick="switchDashboardTab('form1')" class="flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors">
+                        웰컴/상담존
+                    </button>
+                    <button id="tabBtn2" onclick="switchDashboardTab('form2')" class="flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors">
+                        접객서비스
+                    </button>
+                </div>
+                <h2 id="dashboardTypeTitle" class="text-xl font-bold text-gray-800 border-b-2 border-gray-300 pb-2">
+                    웰컴존·상담존 모니터링 현황
+                </h2>
+            </div>
+
+            <!-- 집계 카드 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-sm text-gray-500 font-semibold mb-1">총 평가 건수</p>
+                    <p class="text-3xl font-bold text-blue-700" id="totalCount">0건</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-sm text-gray-500 font-semibold mb-1">전체 평균 점수</p>
+                    <p class="text-3xl font-bold text-blue-700" id="totalAvg">0점</p>
+                </div>
+            </div>
+
+            <!-- 요약 차트 영역 -->
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">구분별 평균 점수 요약 (100점 환산)</h3>
+                <div class="h-64">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 문항별 상세 점수 영역 -->
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">세부 항목별 평균 점수 (100점 환산)</h3>
+                <div id="detailedScoresList" class="space-y-4">
+                    <!-- 자바스크립트로 리스트가 자동 생성됩니다 -->
+                </div>
+            </div>
+
+            <!-- 피드백 영역 -->
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">최근 평가자 의견</h3>
+                <div id="feedbackList" class="space-y-3">
+                    <p class="text-sm text-gray-400 text-center py-4">등록된 평가 데이터가 없습니다.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 스크립트 로직 -->
+    <script>
+        // Supabase 연동 키 
+        const SUPABASE_URL = 'https://agysoivrjsbbtiqlsxud.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFneXNvaXZyanNiYnRpcWxzeHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3OTA3NzIsImV4cCI6MjEwMzM2Njc3Mn0.pMfOlCkNeF1pbuyTUHBzOgC5FziWOeXeKMTH16vARJw';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentView = 'form';
+        let allDashboardData = [];
+        let currentDashboardTab = 'form1';
+
+        async function switchView() {
+            const formView = document.getElementById('form_view');
+            const dashboardView = document.getElementById('dashboard_view');
+            const btn = document.getElementById('toggleBtn');
+            const title = document.getElementById('headerTitle');
+
+            if (currentView === 'form') {
+                formView.classList.add('hidden');
+                dashboardView.classList.remove('hidden');
+                btn.innerText = '평가 작성하기';
+                // [수정됨] 대시보드 화면일 때 제목
+                title.innerText = '모니터링 현황';
+                currentView = 'dashboard';
+                await loadDashboardData();
+            } else {
+                dashboardView.classList.add('hidden');
+                formView.classList.remove('hidden');
+                btn.innerText = '현황 보기';
+                // [수정됨] 폼 화면일 때 제목
+                title.innerText = '접객서비스 모니터링';
+                currentView = 'form';
+            }
+        }
+
+        function switchDashboardTab(type) {
+            currentDashboardTab = type;
+            
+            const btn1 = document.getElementById('tabBtn1');
+            const btn2 = document.getElementById('tabBtn2');
+            const typeTitle = document.getElementById('dashboardTypeTitle');
+
+            if (type === 'form1') {
+                btn1.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                btn2.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                typeTitle.innerText = "웰컴존·상담존 모니터링 현황";
+            } else {
+                btn2.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                btn1.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                typeTitle.innerText = "판매사원 접객·배웅 서비스 현황";
+            }
+
+            updateDashboardUI();
+        }
+
+        function toggleEvalForm() {
+            const type = document.getElementById('evalType').value;
+            document.getElementById('form1_container').classList.toggle('hidden', type !== 'form1');
+            document.getElementById('form2_container').classList.toggle('hidden', type !== 'form2');
+            document.getElementById('scaleInfo').classList.toggle('hidden', type === '');
+            document.getElementById('feedback_container').classList.toggle('hidden', type === '');
+        }
+
+        const questionsForm1 = [
+            { id: "f1_q1", cat: "웰컴존", title: "지정·운영 여부", desc: "지정된 웰컴존에서 실제 고객 접점이 형성되고 있는가?" },
+            { id: "f1_q2", cat: "웰컴존", title: "위치 적정성", desc: "고객 동선에서 고객을 자연스럽게 인지·응대할 수 있는 위치에 있는가?" },
+            { id: "f1_q3", cat: "웰컴존", title: "우선순위", desc: "복수 웰컴존 운영 시 ①→②→③ 순으로 적절하게 운영되고 있는가?" },
+            { id: "f1_q4", cat: "웰컴존", title: "공백 대응", desc: "웰컴존이 비어 있는 상황에서도 고객인지가 이루어지고 있는가?" },
+            { id: "f1_q5", cat: "상담존", title: "위치 적정성", desc: "상담이 고객시야가 확보된 위치에서 이루어지고 있는가?" },
+            { id: "f1_q6", cat: "상담존", title: "상담 중 고객인지", desc: "상담 중에도 신규 고객을 인지할 수 있는 구조 및 행동이 이루어지는가?" },
+            { id: "f1_q7", cat: "상황별 운영", title: "1인 근무대응", desc: "1인 근무 시 상담과 고객인지가 상황에 맞게 병행되고 있는가?" },
+            { id: "f1_q8", cat: "상황별 운영", title: "복수인원 운영", desc: "상담 발생 시 웰컴존 ①→②→③ 순으로 적절하게 전환되고 있는가?" },
+            { id: "f1_q9", cat: "상황별 운영", title: "PeakTime 대응(1)", desc: "고객유입 집중 시 고객인지 및 공통인사를 하는가?" },
+            { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응(2)", desc: "전원상담 시 상황 주시, 인지 표현, 대기고객 발생에 따른 양해 표현을 하는가?" }
+        ];
+
+        const questionsForm2 = [
+            { id: "f2_q1", cat: "고객인지 및 입점", title: "고객인지(상담중)", desc: "고객 입점 시 고객을 인지하고 눈맞춤·미소·인사로 반응하는가?" },
+            { id: "f2_q2", cat: "고객인지 및 입점", title: "입점인사(대기중)", desc: "고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?" },
+            { id: "f2_q3", cat: "탐색", title: "자율 탐색 배려", desc: "고객이 편안하게 매장을 둘러볼 수 있도록 적정 거리를 유지하는가?" },
+            { id: "f2_q4", cat: "탐색", title: "적절한 접근", desc: "고객의 관심·행동을 관찰하고 고객이 도움을 필요로 할 때 적절하게 응대하는가?" },
+            { id: "f2_q5", cat: "상담·연결", title: "신규고객 대응", desc: "상담 중 신규 고객 발생 시 기존 고객 상담과 신규 고객 인지를 적절히 병행하는가?" },
+            { id: "f2_q6", cat: "상담·연결", title: "대기고객 안내", desc: "상담 대기 발생 시 고객에게 상황 및 예상 대기시간 등을 적절히 안내하는가?" },
+            { id: "f2_q7", cat: "배웅", title: "퇴점 고객인지", desc: "고객 퇴점 시 고객을 인지하고 반응하는가?" },
+            { id: "f2_q8", cat: "배웅", title: "배웅 인사", desc: "구매 여부와 관계없이 감사·배웅 인사를 하는가?" },
+            { id: "f2_q9", cat: "용모/태도", title: "용모 복장", desc: "깔끔한 용모와 판매자로서 적합한 복장을 갖추고 응대하였는가?" },
+            { id: "f2_q10", cat: "용모/태도", title: "톤앤매너", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?" }
+        ];
+
+        function renderQuestions(containerId, questions) {
+            const container = document.getElementById(containerId);
+            let html = '';
+            questions.forEach((q, index) => {
+                html += `
+                <div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${q.cat}</span>
+                        <h3 class="font-bold text-gray-800">${index + 1}. ${q.title}</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">${q.desc}</p>
+                    <div class="flex justify-between gap-1">
+                        ${[1,2,3,4,5].map(score => `
+                        <label class="flex-1 text-center cursor-pointer">
+                            <input type="radio" name="${q.id}" value="${score}" class="peer sr-only">
+                            <div class="py-2 border border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-gray-50 font-medium transition-colors">${score}</div>
+                        </label>
+                        `).join('')}
+                        <label class="flex-1 text-center cursor-pointer">
+                            <input type="radio" name="${q.id}" value="NA" class="peer sr-only">
+                            <div class="py-2 border border-gray-300 rounded peer-checked:bg-gray-500 peer-checked:text-white peer-checked:border-gray-500 hover:bg-gray-50 text-sm font-medium flex items-center justify-center transition-colors">N/A</div>
+                        </label>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        renderQuestions('form1_container', questionsForm1);
+        renderQuestions('form2_container', questionsForm2);
+
+        // 제출 로직 (Raw Data 수집)
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const evalType = document.getElementById('evalType').value;
+            const questions = evalType === 'form1' ? questionsForm1 : questionsForm2;
+
+            let totalSum = 0;
+            let totalValidCount = 0;
+            const catStats = {};
+            const rawScores = {}; 
+
+            for (let q of questions) {
+                const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+                if (!selected) {
+                    alert('모든 문항을 빠짐없이 선택해주세요.');
+                    return;
+                }
+
+                const val = selected.value;
+                rawScores[q.id] = val; 
+
+                if (!catStats[q.cat]) {
+                    catStats[q.cat] = { sum: 0, count: 0 };
+                }
+
+                if (val !== 'NA') {
+                    const scoreNum = parseInt(val);
+                    totalSum += scoreNum;
+                    totalValidCount++;
+
+                    catStats[q.cat].sum += scoreNum;
+                    catStats[q.cat].count++;
+                }
+            }
+
+            if (totalValidCount === 0) {
+                alert('모든 문항이 N/A 처리되어 점수를 산출할 수 없습니다.');
+                return;
+            }
+
+            const totalScore = Math.round((totalSum / totalValidCount) * 20);
+
+            const categoryScores = {};
+            for (let cat in catStats) {
+                if (catStats[cat].count > 0) {
+                    categoryScores[cat] = Math.round((catStats[cat].sum / catStats[cat].count) * 20);
+                } else {
+                    categoryScores[cat] = null;
+                }
+            }
+
+            const payload = {
+                store_name: document.getElementById('storeName').value,
+                visit_time: document.getElementById('visitTime').value,
+                emp_id: document.getElementById('empId').value,
+                emp_name: document.getElementById('empName').value,
+                eval_type: evalType,
+                total_score: totalScore,
+                category_scores: categoryScores,
+                raw_scores: rawScores, 
+                feedback: document.getElementById('feedbackText').value || null
+            };
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = '저장 중...';
+
+            try {
+                const { error } = await supabaseClient.from('evaluations').insert([payload]);
+                if (error) throw error;
+
+                alert(`평가가 성공적으로 제출되었습니다! (종합점수: ${totalScore}점)`);
+                document.getElementById('evaluationForm').reset();
+                toggleEvalForm();
+            } catch (err) {
+                console.error(err);
+                alert('저장 중 오류가 발생했습니다: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = '평가 제출하기';
+            }
+        }
+
+        let myChart = null;
+        
+        async function loadDashboardData() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('evaluations')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                
+                allDashboardData = data || [];
+                updateDashboardUI();
+
+            } catch (err) {
+                console.error(err);
+                alert('대시보드 데이터를 불러오는데 실패했습니다: ' + err.message);
+            }
+        }
+
+        function updateDashboardUI() {
+            const targetData = allDashboardData.filter(d => d.eval_type === currentDashboardTab);
+            const detailedContainer = document.getElementById('detailedScoresList');
+
+            if (targetData.length === 0) {
+                document.getElementById('totalCount').innerText = '0건';
+                document.getElementById('totalAvg').innerText = '0점';
+                document.getElementById('feedbackList').innerHTML = '<p class="text-sm text-gray-400 text-center py-4">등록된 평가 데이터가 없습니다.</p>';
+                detailedContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">평가 데이터가 없습니다.</p>';
+                
+                const emptyLabels = currentDashboardTab === 'form1' ? ['웰컴존', '상담존', '상황별 운영'] : ['고객인지/입점', '탐색', '상담/연결', '배웅', '용모/태도'];
+                renderChart(emptyLabels, Array(emptyLabels.length).fill(0));
+                return;
+            }
+
+            // 1) 전체 건수 및 평균 
+            const totalCount = targetData.length;
+            const totalScoreSum = targetData.reduce((acc, cur) => acc + cur.total_score, 0);
+            const overallAvg = Math.round(totalScoreSum / totalCount);
+
+            document.getElementById('totalCount').innerText = `${totalCount}건`;
+            document.getElementById('totalAvg').innerText = `${overallAvg}점`;
+
+            // 2) 탭에 맞는 질문 세팅 및 차트 데이터 집계
+            const questions = currentDashboardTab === 'form1' ? questionsForm1 : questionsForm2;
+            let categories = currentDashboardTab === 'form1' 
+                ? ['웰컴존', '상담존', '상황별 운영'] 
+                : ['고객인지 및 입점', '탐색', '상담·연결', '배웅', '용모/태도'];
+            let chartLabels = currentDashboardTab === 'form1'
+                ? ['웰컴존', '상담존', '상황별 운영'] 
+                : ['고객인지/입점', '탐색', '상담/연결', '배웅', '용모/태도'];
+
+            // 구조화: 항목별 점수를 모을 객체 세팅
+            const itemAgg = {};
+            questions.forEach(q => {
+                if (!itemAgg[q.cat]) itemAgg[q.cat] = { items: [], catSum: 0, catCount: 0 };
+                itemAgg[q.cat].items.push({ id: q.id, title: q.title, sum: 0, count: 0 });
+            });
+
+            targetData.forEach(evalData => {
+                if (evalData.raw_scores) {
+                    questions.forEach(q => {
+                        const val = evalData.raw_scores[q.id];
+                        if (val && val !== 'NA') {
+                            const scoreNum = parseInt(val);
+                            
+                            // 세부 항목 합산
+                            const catData = itemAgg[q.cat];
+                            const itemData = catData.items.find(i => i.id === q.id);
+                            if(itemData) {
+                                itemData.sum += scoreNum;
+                                itemData.count++;
+                            }
+                            
+                            // 구분(카테고리) 합산
+                            catData.catSum += scoreNum;
+                            catData.catCount++;
+                        }
+                    });
+                }
+            });
+
+            // 3) 차트 그리기
+            const chartScores = categories.map(c => {
+                return (itemAgg[c] && itemAgg[c].catCount > 0) 
+                    ? Math.round((itemAgg[c].catSum / itemAgg[c].catCount) * 20) 
+                    : 0;
+            });
+            renderChart(chartLabels, chartScores);
+
+            // 4) 세부 항목별 렌더링 HTML 생성
+            let detailedHtml = '';
+            categories.forEach(cat => {
+                const catData = itemAgg[cat];
+                if(catData) {
+                    const catAvg = catData.catCount > 0 ? Math.round((catData.catSum / catData.catCount) * 20) : 0;
+                    
+                    detailedHtml += `
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="bg-blue-50 p-3 font-bold text-gray-800 flex justify-between items-center border-b border-gray-200">
+                                <span>${cat}</span>
+                                <span class="text-blue-700">${catAvg}점</span>
+                            </div>
+                            <div class="p-3 space-y-3 bg-white">
+                    `;
+                    
+                    catData.items.forEach(itemData => {
+                        const itemAvg = itemData.count > 0 ? Math.round((itemData.sum / itemData.count) * 20) : 0;
+                        const avgText = itemData.count > 0 ? `${itemAvg}점` : `<span class="text-gray-400 font-normal">데이터 없음</span>`;
+                        
+                        detailedHtml += `
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600 flex-1 pr-4">${itemData.title}</span>
+                                <span class="font-semibold text-gray-800 whitespace-nowrap">${avgText}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    detailedHtml += `</div></div>`;
+                }
+            });
+            detailedContainer.innerHTML = detailedHtml;
+
+            // 5) 피드백 렌더링
+            const feedbackContainer = document.getElementById('feedbackList');
+            const validFeedbacks = targetData.filter(d => d.feedback && d.feedback.trim() !== '');
+
+            if (validFeedbacks.length === 0) {
+                feedbackContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">작성된 평가자 의견이 없습니다.</p>';
+            } else {
+                feedbackContainer.innerHTML = validFeedbacks.slice(0, 10).map(f => `
+                    <div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-blue-700">${f.store_name} (${f.emp_name})</span>
+                            <span class="text-xs text-gray-500">${new Date(f.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-gray-700 whitespace-pre-wrap">${f.feedback}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderChart(labels, chartData) {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '구분별 평균 점수',
+                        data: chartData,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: {
+                        x: { beginAtZero: true, max: 100 }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    maintainAspectRatio: false
+                }
+            });
+        }
+    </script>
+</body>
+</html>
