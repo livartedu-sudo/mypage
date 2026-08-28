@@ -93,7 +93,6 @@
                         </div>
                     </div>
 
-                    <!-- [추가됨] 혼잡도 & 근무인원 -->
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">매장 혼잡도</label>
@@ -386,7 +385,6 @@
             const detailContent = document.getElementById('adminDetailContent');
             const typeName = evalData.eval_type === 'form1' ? '웰컴존·상담존 모니터링' : '판매사원 접객·배웅 서비스 모니터링';
             
-            // [수정됨] 혼잡도 및 인원 정보 추가 표시
             let html = `
                 <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-sm space-y-2 mb-4">
                     <p><strong>구분:</strong> ${evalData.division || '미입력'}</p>
@@ -456,6 +454,7 @@
             { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응(2)", desc: "전원상담 시 상황 주시, 인지 표현, 대기고객 발생에 따른 양해 표현을 하는가?" }
         ];
 
+        // [수정됨] 판매사원 접객 배웅 서비스 7번, 8번 문항 수정
         const questionsForm2 = [
             { id: "f2_q1", cat: "고객인지 및 입점", title: "고객인지(상담중)", desc: "고객 입점 시 고객을 인지하고 눈맞춤·미소·인사로 반응하는가?" },
             { id: "f2_q2", cat: "고객인지 및 입점", title: "입점인사(대기중)", desc: "고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?" },
@@ -463,8 +462,8 @@
             { id: "f2_q4", cat: "탐색", title: "적절한 접근", desc: "고객의 관심·행동을 관찰하고 고객이 도움을 필요로 할 때 적절하게 응대하는가?" },
             { id: "f2_q5", cat: "상담·연결", title: "신규고객 대응", desc: "상담 중 신규 고객 발생 시 기존 고객 상담과 신규 고객 인지를 적절히 병행하는가?" },
             { id: "f2_q6", cat: "상담·연결", title: "대기고객 안내", desc: "상담 대기 발생 시 고객에게 상황 및 예상 대기시간 등을 적절히 안내하는가?" },
-            { id: "f2_q7", cat: "배웅", title: "퇴점 고객인지", desc: "고객 퇴점 시 고객을 인지하고 반응하는가?" },
-            { id: "f2_q8", cat: "배웅", title: "배웅 인사", desc: "구매 여부와 관계없이 감사·배웅 인사를 하는가?" },
+            { id: "f2_q7", cat: "배웅", title: "배웅실행(응대고객)", desc: "고객 퇴점 시 감사·인사 등 적절한 배웅이 이루어지는가?" },
+            { id: "f2_q8", cat: "배웅", title: "배웅(탐색·비구매고객)", desc: "구매·상담 고객뿐 아니라 단순 탐색 고객까지 일관되게 배웅하는가?" },
             { id: "f2_q9", cat: "용모/태도", title: "용모 복장", desc: "깔끔한 용모와 판매자로서 적합한 복장을 갖추고 응대하였는가?" },
             { id: "f2_q10", cat: "용모/태도", title: "톤앤매너", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?" }
         ];
@@ -561,7 +560,6 @@
                 }
             }
 
-            // [추가됨] crowdedness, staff_count 데이터 포함
             const payload = {
                 division: document.getElementById('division').value,
                 store_name: document.getElementById('storeName').value,
