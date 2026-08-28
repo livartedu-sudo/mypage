@@ -30,7 +30,8 @@
             <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6">
                 <!-- 기본 정보 -->
                 <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
-                    <div class="grid grid-cols-2 gap-3">
+                    <!-- [수정됨] 모바일에서는 1칸(위아래), 넓은 화면에서는 2칸(양옆)으로 배치 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">구분</label>
                             <select id="division" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
@@ -78,7 +79,7 @@
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
                             <input type="datetime-local" id="visitTime" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
@@ -93,7 +94,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">매장 혼잡도</label>
                             <select id="crowdedness" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
@@ -118,7 +119,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 사번</label>
                             <input type="text" id="empId" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: v123456" required>
@@ -175,21 +176,22 @@
                     <h2 id="dashboardTypeTitle" class="text-lg font-bold text-gray-800 whitespace-nowrap">
                         웰컴존·상담존 모니터링 현황
                     </h2>
-                    <div class="flex gap-2">
+                    <!-- [수정됨] 모바일에서 필터들도 예쁘게 떨어지도록 변경 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <!-- 구분 필터 -->
-                        <select id="dashboardDivisionFilter" onchange="updateDashboardUI()" class="flex-1 p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-xs sm:text-sm">
+                        <select id="dashboardDivisionFilter" onchange="updateDashboardUI()" class="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                             <option value="all">전체 구분</option>
                             <option value="리빙">리빙</option>
                             <option value="집테리어">집테리어</option>
                         </select>
                         <!-- 평일/주말 필터 -->
-                        <select id="dashboardDayTypeFilter" onchange="updateDashboardUI()" class="flex-1 p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-xs sm:text-sm">
+                        <select id="dashboardDayTypeFilter" onchange="updateDashboardUI()" class="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                             <option value="all">평일/주말 (전체)</option>
                             <option value="평일">평일</option>
                             <option value="주말/공휴일">주말/공휴일</option>
                         </select>
                         <!-- 매장 필터 -->
-                        <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="flex-1 p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-xs sm:text-sm">
+                        <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                             <option value="all">전체 매장</option>
                             <optgroup label="백화점">
                                 <option value="더현서">더현서</option>
@@ -454,7 +456,6 @@
             { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응(2)", desc: "전원상담 시 상황 주시, 인지 표현, 대기고객 발생에 따른 양해 표현을 하는가?" }
         ];
 
-        // [수정됨] 판매사원 접객 배웅 서비스 7번, 8번 문항 수정
         const questionsForm2 = [
             { id: "f2_q1", cat: "고객인지 및 입점", title: "고객인지(상담중)", desc: "고객 입점 시 고객을 인지하고 눈맞춤·미소·인사로 반응하는가?" },
             { id: "f2_q2", cat: "고객인지 및 입점", title: "입점인사(대기중)", desc: "고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?" },
