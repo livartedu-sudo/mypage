@@ -11,11 +11,32 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 모바일(아이폰 등)에서 달력 위젯이 박스를 뚫고 나가는 현상 및 높이 불균형 강제 해결 */
+        /* iOS Safari 고유 렌더링 엔진 무력화 및 규격 강제 통일 */
         input[type="datetime-local"], select, input[type="text"], textarea {
+            -webkit-appearance: none !important;
+            appearance: none !important;
             box-sizing: border-box !important;
-            min-width: 0 !important;
+            width: 100% !important;
             max-width: 100% !important;
+            margin: 0 !important;
+            border-radius: 0.5rem !important;
+        }
+        /* 콤보박스 화살표 수동 복구 (-webkit-appearance: none 적용 시 사라짐 방지) */
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem !important;
+        }
+        /* 날짜 입력창 텍스트 정렬 보정 */
+        input[type="datetime-local"] {
+            display: block !important;
+        }
+        /* 라디오 버튼 UI 속성은 정상 유지 */
+        input[type="radio"] {
+            -webkit-appearance: auto !important;
+            appearance: auto !important;
         }
     </style>
 </head>
@@ -36,12 +57,12 @@
         <!-- ========================================== -->
         <div id="form_view">
             <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6">
-                <!-- 기본 정보 (높이, 넓이 일괄 통일) -->
+                <!-- 기본 정보 -->
                 <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">구분</label>
-                            <select id="division" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                            <select id="division" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
                                 <option value="">선택</option>
                                 <option value="리빙">리빙</option>
                                 <option value="집테리어">집테리어</option>
@@ -49,7 +70,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">매장명</label>
-                            <select id="storeName" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                            <select id="storeName" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
                                 <option value="">매장 선택</option>
                                 <optgroup label="백화점 (16점)">
                                     <option value="더현서">더현서</option>
@@ -87,13 +108,13 @@
                     </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="overflow-hidden">
+                        <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
-                            <input type="datetime-local" id="visitTime" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                            <input type="datetime-local" id="visitTime" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">평일/주말</label>
-                            <select id="dayType" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                            <select id="dayType" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
                                 <option value="">선택</option>
                                 <option value="평일">평일</option>
                                 <option value="주말/공휴일">주말/공휴일</option>
@@ -104,7 +125,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">매장 혼잡도</label>
-                            <select id="crowdedness" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                            <select id="crowdedness" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
                                 <option value="">선택</option>
                                 <option value="없음">없음</option>
                                 <option value="여유">여유</option>
@@ -115,7 +136,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">근무 인원</label>
-                            <select id="staffCount" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                            <select id="staffCount" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
                                 <option value="">선택</option>
                                 <option value="1명">1명</option>
                                 <option value="2명">2명</option>
@@ -129,11 +150,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 사번</label>
-                            <input type="text" id="empId" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="예: v123456" required>
+                            <input type="text" id="empId" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="예: v123456" required>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 성명</label>
-                            <input type="text" id="empName" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="예: 홍길동" required>
+                            <input type="text" id="empName" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="예: 홍길동" required>
                         </div>
                     </div>
                 </section>
@@ -141,7 +162,7 @@
                 <!-- 평가 종류 선택 -->
                 <section>
                     <label class="block text-base font-bold text-gray-800 mb-2">어떤 평가를 진행하시겠습니까?</label>
-                    <select id="evalType" onchange="toggleEvalForm()" class="w-full h-12 px-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 shadow-sm" required>
+                    <select id="evalType" onchange="toggleEvalForm()" class="h-12 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 shadow-sm" required>
                         <option value="">-- 평가 종류 선택 --</option>
                         <option value="form1">1. 웰컴존·상담존 모니터링 평가</option>
                         <option value="form2">2. 판매사원 접객·배웅 서비스 수준 평가</option>
@@ -155,7 +176,7 @@
                 <!-- 평가자 의견 & 제출 -->
                 <section id="feedback_container" class="hidden pt-4 border-t-2 border-gray-200">
                     <label class="block font-bold text-gray-800 mb-2">평가자 의견 <span class="text-sm font-normal text-gray-500">(우수/미흡 등)</span></label>
-                    <textarea id="feedbackText" rows="4" class="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm text-gray-800" placeholder="자유롭게 주관식 의견을 작성해주세요."></textarea>
+                    <textarea id="feedbackText" rows="4" class="p-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm text-gray-800" placeholder="자유롭게 주관식 의견을 작성해주세요."></textarea>
                     
                     <button type="submit" id="submitBtn" class="mt-6 w-full bg-blue-700 text-white font-bold py-4 rounded-lg shadow hover:bg-blue-800 transition-colors text-lg">
                         평가 제출하기
@@ -185,19 +206,19 @@
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <!-- 구분 필터 -->
-                        <select id="dashboardDivisionFilter" onchange="updateDashboardUI()" class="w-full h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
+                        <select id="dashboardDivisionFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                             <option value="all">전체 구분</option>
                             <option value="리빙">리빙</option>
                             <option value="집테리어">집테리어</option>
                         </select>
                         <!-- 평일/주말 필터 -->
-                        <select id="dashboardDayTypeFilter" onchange="updateDashboardUI()" class="w-full h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
+                        <select id="dashboardDayTypeFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                             <option value="all">평일/주말 (전체)</option>
                             <option value="평일">평일</option>
                             <option value="주말/공휴일">주말/공휴일</option>
                         </select>
                         <!-- 매장 필터 -->
-                        <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="w-full h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
+                        <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                             <option value="all">전체 매장</option>
                             <optgroup label="백화점">
                                 <option value="더현서">더현서</option>
@@ -248,7 +269,7 @@
             </div>
 
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                <h3 class="font-bold text-gray-800 mb-4">구분별 평균 점수 요약 (100점 환산)</h3>
+                <h3 class="font-bold text-gray-800 mb-4">구분별 평균 점 요약 (100점 환산)</h3>
                 <div class="h-64">
                     <canvas id="scoreChart"></canvas>
                 </div>
