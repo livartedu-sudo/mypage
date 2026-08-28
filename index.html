@@ -77,10 +77,48 @@
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
-                        <input type="datetime-local" id="visitTime" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
+                            <input type="datetime-local" id="visitTime" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">평일/주말</label>
+                            <select id="dayType" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                                <option value="">선택</option>
+                                <option value="평일">평일</option>
+                                <option value="주말/공휴일">주말/공휴일</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <!-- [추가됨] 혼잡도 & 근무인원 -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">매장 혼잡도</label>
+                            <select id="crowdedness" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                                <option value="">선택</option>
+                                <option value="없음">없음</option>
+                                <option value="여유">여유</option>
+                                <option value="보통">보통</option>
+                                <option value="혼잡">혼잡</option>
+                                <option value="매우 혼잡">매우 혼잡</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">근무 인원</label>
+                            <select id="staffCount" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" required>
+                                <option value="">선택</option>
+                                <option value="1명">1명</option>
+                                <option value="2명">2명</option>
+                                <option value="3명">3명</option>
+                                <option value="4명">4명</option>
+                                <option value="5명 이상">5명 이상</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 사번</label>
@@ -134,45 +172,59 @@
                     </button>
                 </div>
                 
-                <!-- [수정됨] 대시보드 타이틀 및 필터 (한 줄로 원상복구) -->
-                <div class="flex justify-between items-center border-b-2 border-gray-300 pb-2 gap-2">
+                <div class="flex flex-col gap-3 border-b-2 border-gray-300 pb-3">
                     <h2 id="dashboardTypeTitle" class="text-lg font-bold text-gray-800 whitespace-nowrap">
                         웰컴존·상담존 모니터링 현황
                     </h2>
-                    <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
-                        <option value="all">전체 매장 (통합)</option>
-                        <optgroup label="백화점">
-                            <option value="더현서">더현서</option>
-                            <option value="무역">무역</option>
-                            <option value="목동">목동</option>
-                            <option value="천호">천호</option>
-                            <option value="미아">미아</option>
-                            <option value="신촌">신촌</option>
-                            <option value="가산">가산</option>
-                            <option value="판교">판교</option>
-                            <option value="킨텍스">킨텍스</option>
-                            <option value="중동">중동</option>
-                            <option value="송도">송도</option>
-                            <option value="김포">김포</option>
-                            <option value="스페이스원">스페이스원</option>
-                            <option value="충청">충청</option>
-                            <option value="대구">대구</option>
-                            <option value="대전아울렛">대전아울렛</option>
-                        </optgroup>
-                        <optgroup label="로드샵">
-                            <option value="강남">강남</option>
-                            <option value="용산">용산</option>
-                            <option value="수원">수원</option>
-                            <option value="고양">고양</option>
-                            <option value="용인">용인</option>
-                            <option value="기흥">기흥</option>
-                            <option value="대전">대전</option>
-                            <option value="울산">울산</option>
-                            <option value="광주">광주</option>
-                            <option value="부산">부산</option>
-                            <option value="동부산">동부산</option>
-                        </optgroup>
-                    </select>
+                    <div class="flex gap-2">
+                        <!-- 구분 필터 -->
+                        <select id="dashboardDivisionFilter" onchange="updateDashboardUI()" class="flex-1 p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-xs sm:text-sm">
+                            <option value="all">전체 구분</option>
+                            <option value="리빙">리빙</option>
+                            <option value="집테리어">집테리어</option>
+                        </select>
+                        <!-- 평일/주말 필터 -->
+                        <select id="dashboardDayTypeFilter" onchange="updateDashboardUI()" class="flex-1 p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-xs sm:text-sm">
+                            <option value="all">평일/주말 (전체)</option>
+                            <option value="평일">평일</option>
+                            <option value="주말/공휴일">주말/공휴일</option>
+                        </select>
+                        <!-- 매장 필터 -->
+                        <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="flex-1 p-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-xs sm:text-sm">
+                            <option value="all">전체 매장</option>
+                            <optgroup label="백화점">
+                                <option value="더현서">더현서</option>
+                                <option value="무역">무역</option>
+                                <option value="목동">목동</option>
+                                <option value="천호">천호</option>
+                                <option value="미아">미아</option>
+                                <option value="신촌">신촌</option>
+                                <option value="가산">가산</option>
+                                <option value="판교">판교</option>
+                                <option value="킨텍스">킨텍스</option>
+                                <option value="중동">중동</option>
+                                <option value="송도">송도</option>
+                                <option value="김포">김포</option>
+                                <option value="스페이스원">스페이스원</option>
+                                <option value="충청">충청</option>
+                                <option value="대구">대구</option>
+                                <option value="대전아울렛">대전아울렛</option>
+                            </optgroup>
+                            <optgroup label="로드샵">
+                                <option value="강남">강남</option>
+                                <option value="용산">용산</option>
+                                <option value="수원">수원</option>
+                                <option value="고양">고양</option>
+                                <option value="용인">용인</option>
+                                <option value="기흥">기흥</option>
+                                <option value="대전">대전</option>
+                                <option value="울산">울산</option>
+                                <option value="광주">광주</option>
+                                <option value="부산">부산</option>
+                                <option value="동부산">동부산</option>
+                            </optgroup>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -317,7 +369,7 @@
                     <div>
                         <span class="font-bold text-gray-800 block mb-1">[${d.division || '구분없음'}] ${d.store_name} - ${d.emp_name}</span>
                         <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">${d.eval_type === 'form1' ? '웰컴/상담존' : '접객서비스'}</span>
-                        <span class="text-xs text-gray-400 ml-1">${new Date(d.visit_time).toLocaleString()}</span>
+                        <span class="text-xs text-gray-400 ml-1">${new Date(d.visit_time).toLocaleString()} (${d.day_type || '-'})</span>
                     </div>
                     <span class="text-blue-700 font-bold text-lg">${d.total_score}점</span>
                 </li>
@@ -334,11 +386,13 @@
             const detailContent = document.getElementById('adminDetailContent');
             const typeName = evalData.eval_type === 'form1' ? '웰컴존·상담존 모니터링' : '판매사원 접객·배웅 서비스 모니터링';
             
+            // [수정됨] 혼잡도 및 인원 정보 추가 표시
             let html = `
                 <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-sm space-y-2 mb-4">
                     <p><strong>구분:</strong> ${evalData.division || '미입력'}</p>
                     <p><strong>매장명:</strong> ${evalData.store_name}</p>
-                    <p><strong>방문일시:</strong> ${new Date(evalData.visit_time).toLocaleString()}</p>
+                    <p><strong>방문일시:</strong> ${new Date(evalData.visit_time).toLocaleString()} <strong>[${evalData.day_type || '-'}]</strong></p>
+                    <p><strong>매장상황:</strong> 혼잡도(${evalData.crowdedness || '미입력'}) / 근무인원(${evalData.staff_count || '미입력'})</p>
                     <p><strong>평가자:</strong> ${evalData.emp_name} (사번: ${evalData.emp_id})</p>
                     <p><strong>평가구분:</strong> ${typeName}</p>
                     <p><strong>종합점수:</strong> <span class="text-red-700 font-bold text-lg">${evalData.total_score}점</span></p>
@@ -507,10 +561,14 @@
                 }
             }
 
+            // [추가됨] crowdedness, staff_count 데이터 포함
             const payload = {
                 division: document.getElementById('division').value,
                 store_name: document.getElementById('storeName').value,
                 visit_time: document.getElementById('visitTime').value,
+                day_type: document.getElementById('dayType').value,
+                crowdedness: document.getElementById('crowdedness').value,
+                staff_count: document.getElementById('staffCount').value,
                 emp_id: document.getElementById('empId').value,
                 emp_name: document.getElementById('empName').value,
                 eval_type: evalType,
@@ -561,12 +619,16 @@
         }
 
         function updateDashboardUI() {
+            const filterDivision = document.getElementById('dashboardDivisionFilter').value;
+            const filterDayType = document.getElementById('dashboardDayTypeFilter').value;
             const filterStore = document.getElementById('dashboardStoreFilter').value;
             
             const targetData = allDashboardData.filter(d => {
                 const matchTab = d.eval_type === currentDashboardTab;
+                const matchDiv = (filterDivision === 'all' || d.division === filterDivision);
+                const matchDay = (filterDayType === 'all' || d.day_type === filterDayType);
                 const matchStore = (filterStore === 'all' || d.store_name === filterStore);
-                return matchTab && matchStore;
+                return matchTab && matchDiv && matchDay && matchStore;
             });
 
             const detailedContainer = document.getElementById('detailedScoresList');
@@ -664,7 +726,7 @@
 
             recentListContainer.innerHTML = targetData.slice(0, 15).map(d => `
                 <div class="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200 text-sm">
-                    <span class="font-bold text-gray-800">[${d.division || '-'}] ${d.store_name} - ${d.emp_name}</span>
+                    <span class="font-bold text-gray-800">[${d.division || '-'}] ${d.store_name} - ${d.emp_name} <span class="text-xs font-normal text-gray-500">(${d.day_type || '-'})</span></span>
                     <span class="text-blue-700 font-semibold">${d.total_score}점</span>
                 </div>
             `).join('');
