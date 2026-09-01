@@ -6,8 +6,9 @@
     <title>접객서비스 모니터링 및 대시보드</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
+    <!-- Chart.js 및 Datalabels 플러그인 (막대 위 숫자 표시용) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- 엑셀(.xlsx) 생성 라이브러리 -->
@@ -40,7 +41,7 @@
         </div>
     </div>
 
-    <!-- 앱 래퍼 -->
+    <!-- 앱 전체 래퍼 -->
     <div id="app_container" class="hidden max-w-xl mx-auto bg-white min-h-screen shadow-md relative">
         
         <!-- 상단 헤더 -->
@@ -52,7 +53,7 @@
             </div>
         </header>
 
-        <!-- [내 평가 수정 조회 뷰] -->
+        <!-- 내 평가 수정 조회 뷰 -->
         <div id="edit_search_view" class="hidden p-4 space-y-4 bg-gray-50 min-h-screen">
             <h2 class="text-lg font-bold text-gray-800 border-b-2 border-gray-300 pb-2">내 평가 내역 조회 및 수정</h2>
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-4">
@@ -224,7 +225,7 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- 3. [고도화된] 관리자 화면 -->
+        <!-- 3. 관리자 시스템 화면 -->
         <!-- ========================================== -->
         <div id="admin_view" class="hidden p-4 space-y-4 bg-gray-50 min-h-screen">
             <div class="flex justify-between items-center mb-2 border-b-2 border-gray-300 pb-2">
@@ -235,13 +236,12 @@
                 </div>
             </div>
 
-            <!-- 관리자 탭 -->
             <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
                 <button id="adminTabDash" onclick="switchAdminTab('dash')" class="flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors">대시보드</button>
                 <button id="adminTabSearch" onclick="switchAdminTab('search')" class="flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors">평가지 조회</button>
             </div>
 
-            <!-- 3-1. 관리자 대시보드 뷰 -->
+            <!-- 3-1. 관리자 대시보드 영역 -->
             <div id="admin_dash_container" class="space-y-4 hidden">
                 <select id="adminDashMonth" onchange="updateAdminDash()" class="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm">
                     <option value="all">누적 데이터 전체</option>
@@ -250,20 +250,20 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                         <h3 class="font-bold text-gray-800 text-sm mb-3">사업부별 평균 비교</h3>
-                        <div class="h-40 relative w-full"><canvas id="adminDivChart"></canvas></div>
+                        <div class="h-44 relative w-full"><canvas id="adminDivChart"></canvas></div>
                     </div>
                     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                         <h3 class="font-bold text-gray-800 text-sm mb-3">평가자 직무별 평균 비교</h3>
-                        <div class="h-40 relative w-full"><canvas id="adminRoleChart"></canvas></div>
+                        <div class="h-44 relative w-full"><canvas id="adminRoleChart"></canvas></div>
                     </div>
                 </div>
 
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-gray-800 text-sm">점포별 평균 순위 <span id="adminStoreTitleSpan" class="text-blue-600">(TOP 5)</span></h3>
-                        <button onclick="toggleAdminStores()" id="adminStoreToggleBtn" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold hover:bg-blue-200">전체보기</button>
+                    <div class="flex justify-between items-center mb-3 border-b border-gray-200 pb-2">
+                        <h3 class="font-bold text-gray-800 text-sm">매장별 평균순위 <span id="adminStoreTitleSpan" class="text-blue-600">(상위 & 하위 5개 매장)</span></h3>
+                        <button onclick="toggleAdminStores()" id="adminStoreToggleBtn" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold hover:bg-blue-200">전체 보기</button>
                     </div>
-                    <div id="adminStoreChartWrapper" class="h-64 relative w-full"><canvas id="adminStoreChart"></canvas></div>
+                    <div id="adminStoreList" class="w-full"></div>
                 </div>
 
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -272,7 +272,7 @@
                 </div>
             </div>
 
-            <!-- 3-2. 관리자 검색 뷰 -->
+            <!-- 3-2. 관리자 검색 영역 -->
             <div id="admin_search_container" class="hidden space-y-4">
                 <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 space-y-2">
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -292,7 +292,6 @@
 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div id="adminSearchCount" class="bg-gray-50 text-xs font-bold text-gray-500 p-2 border-b border-gray-200 text-right">0건 조회됨</div>
-                    <!-- [수정] id="adminList"만 남김 (이전 에러 원인 제거) -->
                     <ul id="adminList" class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto"></ul>
                 </div>
             </div>
@@ -316,6 +315,10 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFneXNvaXZyanNiYnRpcWxzeHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3OTA3NzIsImV4cCI6MjEwMzM2Njc3Mn0.pMfOlCkNeF1pbuyTUHBzOgC5FziWOeXeKMTH16vARJw';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        if (typeof ChartDataLabels !== 'undefined') {
+            Chart.register(ChartDataLabels);
+        }
+
         let currentView = 'form';
         let allDashboardData = [];
         let currentDashboardTab = 'form1';
@@ -323,8 +326,16 @@
         let editModeId = null; 
         let myEvalsData = [];
 
-        let aChartDiv=null, aChartRole=null, aChartStore=null, aChartTime=null;
+        let aChartDiv=null, aChartRole=null, aChartTime=null;
         let showAllStoresAdmin = false;
+
+        function getScoreColor(score) {
+            if (score >= 90) return '#3b82f6'; 
+            if (score >= 80) return '#10b981'; 
+            if (score >= 70) return '#f59e0b'; 
+            if (score >= 60) return '#ef4444'; 
+            return '#9ca3af'; 
+        }
 
         function login() {
             if (document.getElementById('sitePassword').value === 'livart2026') { 
@@ -555,29 +566,29 @@
 
         // ========================== 질문 데이터 ==========================
         const questionsForm1 = [
-            { id: "f1_q1", cat: "웰컴존", title: "지정·운영 여부", desc: "지정된 웰컴존에서 실제 고객 접점이 형성되고 있는가?" },
-            { id: "f1_q2", cat: "웰컴존", title: "위치 적정성", desc: "고객 동선에서 고객을 자연스럽게 인지·응대할 수 있는 위치에 있는가?" },
-            { id: "f1_q3", cat: "웰컴존", title: "우선순위", desc: "복수 웰컴존 운영 시 ①→②→③ 순으로 적절하게 운영되고 있는가?" },
-            { id: "f1_q4", cat: "웰컴존", title: "공백 대응", desc: "웰컴존이 비어 있는 상황에서도 고객인지가 이루어지고 있는가?" },
-            { id: "f1_q5", cat: "상담존", title: "위치 적정성", desc: "상담이 고객시야가 확보된 위치에서 이루어지고 있는가?" },
-            { id: "f1_q6", cat: "상담존", title: "상담 중 고객인지", desc: "상담 중에도 신규 고객을 인지할 수 있는 구조 및 행동이 이루어지는가?" },
-            { id: "f1_q7", cat: "상황별 운영", title: "1인 근무대응", desc: "1인 근무 시 상담과 고객인지가 상황에 맞게 병행되고 있는가?" },
-            { id: "f1_q8", cat: "상황별 운영", title: "복수인원 운영", desc: "상담 발생 시 웰컴존 ①→②→③ 순으로 적절하게 전환되고 있는가?" },
-            { id: "f1_q9", cat: "상황별 운영", title: "PeakTime 대응(1)", desc: "고객유입 집중 시 고객인지 및 공통인사를 하는가?" },
-            { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응(2)", desc: "전원상담 시 상황 주시, 인지 표현, 대기고객 발생에 따른 양해 표현을 하는가?" }
+            { id: "f1_q1", cat: "웰컴존", title: "운영 여부", desc: "웰컴존 근처에서 대기하며 실제로 고객과의 응대가 잘 이루어지고 있는가?" },
+            { id: "f1_q2", cat: "웰컴존", title: "적절한 위치", desc: "웰컴존의 위치는 고객 동선을 고려했을 때 적절하다고 생각이 되는가?" },
+            { id: "f1_q3", cat: "웰컴존", title: "순환근무", desc: "웰컴존을 중심으로 우선순위에 맞게 순환 근무가 잘 이루어지고 있는가?" },
+            { id: "f1_q4", cat: "웰컴존", title: "업무 중 대응", desc: "매장관리(청소, 정리정돈) 등 기타 업무 중에도 고객 응대가 잘 이루어지고 있는가?" },
+            { id: "f1_q5", cat: "상담존", title: "적절한 위치", desc: "상담존의 위치는 기존 고객 상담 중 신규 고객을 발견할 수 있는 적절한 위치라고 생각이 되는가?" },
+            { id: "f1_q6", cat: "상담존", title: "상담 중 신규고객 대응", desc: "기존 고객 상담 중 인입되는 신규 고객에 대해 적절하게 응대하고 있는가?<br>① 단순 응대시: 신규 고객에게 맞이 인사 및 편하게 둘러볼 것을 권유<br>② 집중 상담시: 기존 고객이 불쾌하지 않을 수준으로 눈맞춤 등 가벼운 인사" },
+            { id: "f1_q7", cat: "상황별 운영", title: "1인 근무 대응", desc: "1인 근무 시 상황에 맞게 신규고객과 기존 고객의 응대가 잘 이루어지는가?" },
+            { id: "f1_q8", cat: "상황별 운영", title: "복수 인원 근무 대응", desc: "신규 상담 발생시 웰컴존 우선순위에 맞게 적절하게 순환근무가 이루어지는가?" },
+            { id: "f1_q9", cat: "상황별 운영", title: "PeakTime 대응 - 매장 혼잡 시", desc: "매장 내에 유입되는 신규고객에게 공통 인사는 적절하게 이루어지는가?" },
+            { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응 - 전원 상담 시", desc: "상담 중 신규 고객 유입 시 상황에 맞는 적절한 응대와 대기 양해 안내가 이루어지는가?" }
         ];
 
         const questionsForm2 = [
-            { id: "f2_q1", cat: "고객인지 및 입점", title: "고객인지(상담중)", desc: "고객 입점 시 고객을 인지하고 눈맞춤·미소·인사로 반응하는가?" },
-            { id: "f2_q2", cat: "고객인지 및 입점", title: "입점인사(대기중)", desc: "고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?" },
-            { id: "f2_q3", cat: "탐색", title: "자율 탐색 배려", desc: "고객이 편안하게 매장을 둘러볼 수 있도록 적정 거리를 유지하는가?" },
-            { id: "f2_q4", cat: "탐색", title: "적절한 접근", desc: "고객의 관심·행동을 관찰하고 고객이 도움을 필요로 할 때 적절하게 응대하는가?" },
-            { id: "f2_q5", cat: "상담·연결", title: "신규고객 대응", desc: "상담 중 신규 고객 발생 시 기존 고객 상담과 신규 고객 인지를 적절히 병행하는가?" },
-            { id: "f2_q6", cat: "상담·연결", title: "대기고객 안내", desc: "상담 대기 발생 시 고객에게 상황 및 예상 대기시간 등을 적절히 안내하는가?" },
-            { id: "f2_q7", cat: "배웅", title: "배웅실행(응대고객)", desc: "고객 퇴점 시 감사·인사 등 적절한 배웅이 이루어지는가?" },
-            { id: "f2_q8", cat: "배웅", title: "배웅(탐색·비구매고객)", desc: "구매·상담 고객뿐 아니라 단순 탐색 고객까지 일관되게 배웅하는가?" },
-            { id: "f2_q9", cat: "용모/태도", title: "용모 복장", desc: "깔끔한 용모와 판매자로서 적합한 복장을 갖추고 응대하였는가?" },
-            { id: "f2_q10", cat: "용모/태도", title: "톤앤매너", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?" }
+            { id: "f2_q1", cat: "입점인사", title: "집중 상담시", desc: "상담 중 신규 고객 입점 시 가벼운 눈맞춤과 미소로 반응하는가?" },
+            { id: "f2_q2", cat: "입점인사", title: "대기중 또는 단순 응대시", desc: "입점하는 고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?" },
+            { id: "f2_q3", cat: "응대방식", title: "자율 탐색 배려", desc: "고객이 편안하게 매장을 둘러볼 수 있도록 적정 거리를 유지하는가?" },
+            { id: "f2_q4", cat: "응대방식", title: "고객 니즈 대응", desc: "고객이 특정 제품에 관심을 보이거나 도움을 필요로 할 때 적절하게 응대하는가?" },
+            { id: "f2_q5", cat: "상담 중 대응", title: "신규고객 대응", desc: "상담 중 발생하는 신규고객에 대해 방치하는 느낌 없이 적절하게 응대하는가?" },
+            { id: "f2_q6", cat: "상담 중 대응", title: "대기고객 안내", desc: "상담 대기 발생 시 고객에게 현재 상황에 대해 양해를 구하거나 예상 대기시간을 안내하는가?" },
+            { id: "f2_q7", cat: "배웅", title: "응대 고객", desc: "고객 퇴점 시 감사 인사와 함께 적절한 배웅이 이루어지는가?" },
+            { id: "f2_q8", cat: "배웅", title: "단순 방문 고객", desc: "구매 고객 도는 응대 고객뿐만 아니라 단순 방문한 고객까지 일관되게 배웅하는가?" },
+            { id: "f2_q9", cat: "용모/태도", title: "용모 및 복장", desc: "깔끔한 용모와 판매자로서 적합한 복장을 갖추었는가?" },
+            { id: "f2_q10", cat: "용모/태도", title: "표정과 목소리", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?" }
         ];
 
         function renderQuestions(containerId, questions, savedAnswers = null) {
@@ -644,9 +655,12 @@
             document.getElementById('totalAvg').innerText = `${overallAvg}점`;
 
             const questions = currentDashboardTab === 'form1' ? questionsForm1 : questionsForm2;
-            const categories = currentDashboardTab === 'form1' ? ['웰컴존', '상담존', '상황별 운영'] : ['고객인지 및 입점', '탐색', '상담·연결', '배웅', '용모/태도'];
+            
+            // 동적 카테고리 추출 (에러 원천 방지)
+            const categories = [...new Set(questions.map(q => q.cat))];
+                
             const itemAgg = {};
-            questions.forEach(q => itemAgg[q.cat] = { items: [], sum: 0, cnt: 0 });
+            categories.forEach(cat => itemAgg[cat] = { items: [], sum: 0, cnt: 0 });
             questions.forEach(q => itemAgg[q.cat].items.push({ title: q.title, id: q.id, sum: 0, cnt: 0 }));
 
             targetData.forEach(d => {
@@ -663,9 +677,25 @@
             });
 
             const chartScores = categories.map(c => itemAgg[c].cnt > 0 ? Math.round((itemAgg[c].sum / itemAgg[c].cnt) * 20) : 0);
+            const bgColors = chartScores.map(score => getScoreColor(score));
+
             const ctx = document.getElementById('scoreChart').getContext('2d');
             if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, { type: 'bar', data: { labels: categories, datasets: [{ data: chartScores, backgroundColor: '#3b82f6', borderRadius: 4 }] }, options: { indexAxis: 'y', plugins:{legend:{display:false}}, maintainAspectRatio: false } });
+            
+            myChart = new Chart(ctx, { 
+                type: 'bar', 
+                data: { labels: categories, datasets: [{ data: chartScores, backgroundColor: bgColors, borderRadius: 4 }] }, 
+                options: { 
+                    indexAxis: 'y', 
+                    maintainAspectRatio: false,
+                    layout: { padding: { right: 55 } }, 
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { anchor: 'end', align: 'right', color: '#4b5563', font: {weight: 'bold', size: 11}, formatter: v => v+'점' }
+                    }, 
+                    scales: { x: { max: 100 } }
+                } 
+            });
 
             let detailedHtml = '';
             categories.forEach(cat => {
@@ -681,7 +711,8 @@
             document.getElementById('recentEvalList').innerHTML = targetData.slice(0, 15).map(d => `<div class="flex justify-between items-center bg-gray-50 p-3 rounded border text-sm"><span class="font-bold">[${d.division||'-'}] ${d.store_name} - ${d.emp_name}</span><span class="text-blue-700 font-semibold">${d.total_score}점</span></div>`).join('');
         }
 
-        // ========================== [해결 완료] 관리자 페이지 렌더링 로직 ==========================
+
+        // ========================== 관리자 전용 페이지 로직 ==========================
         function checkAdminPassword() {
             const pw = prompt('관리자 전용 비밀번호를 입력하세요:');
             if (pw === '3480') openAdminView();
@@ -691,12 +722,9 @@
         async function openAdminView() {
             window.scrollTo(0, 0); 
             
-            // 일반 뷰 숨기기
             document.getElementById('form_view').classList.add('hidden');
             document.getElementById('dashboard_view').classList.add('hidden');
             document.getElementById('edit_search_view').classList.add('hidden');
-            
-            // 관리자 뷰 열기
             document.getElementById('admin_view').classList.remove('hidden');
             
             document.getElementById('headerTitle').innerText = '관리자 시스템';
@@ -704,30 +732,22 @@
             currentView = 'admin';
 
             document.getElementById('adminDetailContainer').classList.add('hidden');
+            // 여기서 더 이상 존재하지 않는 adminListContainer를 호출하는 유령 코드를 삭제 완료했습니다.
 
-            const listEl = document.getElementById('adminList');
-            listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">데이터를 불러오는 중입니다...</p>';
-
-            // 데이터 로드
             const { data, error } = await supabaseClient.from('evaluations').select('*').order('created_at', { ascending: false });
             if (error) return alert("데이터 로드 실패");
             
             allDashboardData = data || [];
             
-            // 필터 초기화
             const months = [...new Set(allDashboardData.map(d => d.visit_time ? d.visit_time.substring(0, 7) : ''))].filter(Boolean).sort().reverse();
             const dashMonth = document.getElementById('adminDashMonth');
             const searchMonth = document.getElementById('adminSearchMonth');
+            
             dashMonth.innerHTML = '<option value="all">누적 데이터 전체</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
             searchMonth.innerHTML = '<option value="all">전체 월</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
             dashMonth.value = 'all';
             searchMonth.value = 'all';
 
-            if (allDashboardData.length === 0) {
-                listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">제출된 평가가 없습니다.</p>';
-            }
-
-            // [에러 해결] 탭을 바꾸고 차트를 그릴 때, 브라우저가 공간을 확보할 수 있도록 딱 0.1초의 여유를 줍니다.
             switchAdminTab('dash');
         }
 
@@ -743,14 +763,15 @@
                 viewSearch.classList.add('hidden');
                 viewDash.classList.remove('hidden');
                 
-                // 화면이 펴진 후 안전하게 그리도록 setTimeout 설정
-                setTimeout(() => { updateAdminDash(); }, 100);
+                void viewDash.offsetWidth; 
+                setTimeout(() => { updateAdminDash(); }, 50); 
             } else {
                 btnDash.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
                 btnSearch.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
                 viewDash.classList.add('hidden');
                 viewSearch.classList.remove('hidden');
                 
+                void viewSearch.offsetWidth;
                 updateAdminSearchList();
             }
         }
@@ -770,37 +791,105 @@
                 return Object.keys(grp).map(k => ({ label: k, avg: Math.round(grp[k].sum / grp[k].cnt) }));
             };
 
-            // 차트 1: 사업부별
+            // 차트 1: 사업부별 (Y축 최대값 100점 복구, 윗여백 추가)
             const divData = getGroupAvg(targetData, d => d.division);
-            if(aChartDiv) aChartDiv.destroy();
-            aChartDiv = new Chart(document.getElementById('adminDivChart').getContext('2d'), {
-                type: 'bar', data: { labels: divData.map(x=>x.label), datasets: [{ data: divData.map(x=>x.avg), backgroundColor: '#3b82f6', borderRadius:4 }] },
-                options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
-            });
+            const canvasDiv = document.getElementById('adminDivChart');
+            if (aChartDiv) aChartDiv.destroy();
+            if (canvasDiv) {
+                aChartDiv = new Chart(canvasDiv.getContext('2d'), {
+                    type: 'bar', 
+                    data: { labels: divData.map(x=>x.label), datasets: [{ data: divData.map(x=>x.avg), backgroundColor: divData.map(x=>getScoreColor(x.avg)), borderRadius:4 }] },
+                    options: { 
+                        maintainAspectRatio: false, 
+                        layout: { padding: { top: 30 } }, 
+                        plugins:{ 
+                            legend:{display:false},
+                            datalabels: { anchor: 'end', align: 'top', color: '#4b5563', font: {weight: 'bold', size: 11}, formatter: v => v+'점' }
+                        }, 
+                        scales:{y:{beginAtZero:true, max:100}} 
+                    }
+                });
+            }
 
-            // 차트 2: 직무별
+            // 차트 2: 직무별 (Y축 최대값 100점 복구, 윗여백 추가)
             const roleData = getGroupAvg(targetData, d => d.emp_role || '미입력');
-            if(aChartRole) aChartRole.destroy();
-            aChartRole = new Chart(document.getElementById('adminRoleChart').getContext('2d'), {
-                type: 'bar', data: { labels: roleData.map(x=>x.label), datasets: [{ data: roleData.map(x=>x.avg), backgroundColor: '#10b981', borderRadius:4 }] },
-                options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
-            });
+            const canvasRole = document.getElementById('adminRoleChart');
+            if (aChartRole) aChartRole.destroy();
+            if (canvasRole) {
+                aChartRole = new Chart(canvasRole.getContext('2d'), {
+                    type: 'bar', 
+                    data: { labels: roleData.map(x=>x.label), datasets: [{ data: roleData.map(x=>x.avg), backgroundColor: roleData.map(x=>getScoreColor(x.avg)), borderRadius:4 }] },
+                    options: { 
+                        maintainAspectRatio: false, 
+                        layout: { padding: { top: 30 } }, 
+                        plugins:{ 
+                            legend:{display:false},
+                            datalabels: { anchor: 'end', align: 'top', color: '#4b5563', font: {weight: 'bold', size: 11}, formatter: v => v+'점' }
+                        }, 
+                        scales:{y:{beginAtZero:true, max:100}} 
+                    }
+                });
+            }
 
-            // 차트 3: 점포별
+            // 차트 3: 점포별 순위 리스트 (사용자 요청 텍스트 반영)
             let storeData = getGroupAvg(targetData, d => d.store_name).sort((a,b) => b.avg - a.avg);
-            if(!showAllStoresAdmin) storeData = storeData.slice(0, 5);
             
-            document.getElementById('adminStoreTitleSpan').innerText = showAllStoresAdmin ? "(전체)" : "(TOP 5)";
-            document.getElementById('adminStoreToggleBtn').innerText = showAllStoresAdmin ? "TOP 5 보기" : "전체보기";
-            document.getElementById('adminStoreChartWrapper').style.height = showAllStoresAdmin ? (storeData.length * 30 + 50) + "px" : "250px";
+            const titleSpan = document.getElementById('adminStoreTitleSpan');
+            const toggleBtn = document.getElementById('adminStoreToggleBtn');
+            const listContainer = document.getElementById('adminStoreList');
 
-            if(aChartStore) aChartStore.destroy();
-            aChartStore = new Chart(document.getElementById('adminStoreChart').getContext('2d'), {
-                type: 'bar', data: { labels: storeData.map(x=>x.label), datasets: [{ data: storeData.map(x=>x.avg), backgroundColor: '#f59e0b', borderRadius:4 }] },
-                options: { indexAxis: 'y', maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, max:100}} }
-            });
+            if (titleSpan) titleSpan.innerText = showAllStoresAdmin ? "(전체순위)" : "(상위 & 하위 5개 매장)";
+            if (toggleBtn) toggleBtn.innerText = showAllStoresAdmin ? "전체 접기" : "전체 보기";
+            
+            let storeHtml = '';
+            if(storeData.length === 0) {
+                storeHtml = '<p class="text-center text-sm text-gray-400 py-4">데이터 없음</p>';
+            } else {
+                const buildRow = (item, rankNum) => {
+                    let rankClass = rankNum === 1 ? 'bg-yellow-400 text-white' :
+                                    rankNum === 2 ? 'bg-gray-300 text-white' :
+                                    rankNum === 3 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500';
+                    let barColor = getScoreColor(item.avg);
+                    return `
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs ${rankClass} shadow-sm">${rankNum}</div>
+                                <span class="font-bold text-gray-700 text-[13px] sm:text-[14px] truncate max-w-[100px] sm:max-w-full">${item.label}</span>
+                            </div>
+                            <span class="font-bold text-xs px-2 py-0.5 rounded text-white shadow-sm whitespace-nowrap" style="background-color: ${barColor}">${item.avg}점</span>
+                        </div>
+                    `;
+                };
 
-            // 차트 4: 시간대별
+                if (showAllStoresAdmin) {
+                    storeHtml += '<div class="flex flex-col gap-1">';
+                    storeData.forEach((item, index) => {
+                        storeHtml += buildRow(item, index + 1);
+                    });
+                    storeHtml += '</div>';
+                } else {
+                    let top5 = storeData.slice(0, 5);
+                    let bottomStartIndex = Math.max(5, storeData.length - 5);
+                    let bottom5 = storeData.length > 5 ? storeData.slice(bottomStartIndex) : [];
+
+                    storeHtml += '<div class="grid grid-cols-2 gap-4">';
+                    
+                    storeHtml += '<div class="flex flex-col"><div class="text-xs font-bold text-gray-500 mb-2 border-b border-gray-200 pb-1 px-1">🏆 상위 5개 매장</div>';
+                    top5.forEach((item, index) => { storeHtml += buildRow(item, index + 1); });
+                    storeHtml += '</div>';
+
+                    storeHtml += '<div class="flex flex-col"><div class="text-xs font-bold text-gray-500 mb-2 border-b border-gray-200 pb-1 px-1">🚨 하위 5개 매장</div>';
+                    if (bottom5.length > 0) {
+                        bottom5.forEach((item, index) => { storeHtml += buildRow(item, bottomStartIndex + index + 1); });
+                    } else {
+                        storeHtml += '<div class="flex h-full items-center justify-center"><p class="text-xs text-gray-400 py-2">등록 매장 5개 이하</p></div>';
+                    }
+                    storeHtml += '</div></div>';
+                }
+            }
+            if (listContainer) listContainer.innerHTML = storeHtml;
+
+            // 차트 4: 시간대별 흐름
             const timeDataRaw = getGroupAvg(targetData, d => {
                 if(!d.visit_time) return null;
                 const h = new Date(d.visit_time).getHours();
@@ -808,11 +897,32 @@
             });
             const timeData = timeDataRaw.sort((a,b) => parseInt(a.label) - parseInt(b.label)).map(x => ({label: x.label + "시", avg: x.avg}));
             
-            if(aChartTime) aChartTime.destroy();
-            aChartTime = new Chart(document.getElementById('adminTimeChart').getContext('2d'), {
-                type: 'line', data: { labels: timeData.map(x=>x.label), datasets: [{ label: '시간대별 평균', data: timeData.map(x=>x.avg), borderColor: '#8b5cf6', backgroundColor: '#bfdbfe', fill:true, tension:0.4 }] },
-                options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
-            });
+            const canvasTime = document.getElementById('adminTimeChart');
+            if (aChartTime) aChartTime.destroy();
+            if (canvasTime) {
+                aChartTime = new Chart(canvasTime.getContext('2d'), {
+                    type: 'line', 
+                    data: { 
+                        labels: timeData.map(x=>x.label), 
+                        datasets: [{ 
+                            label: '시간대별 평균', 
+                            data: timeData.map(x=>x.avg), 
+                            borderColor: '#8b5cf6', 
+                            backgroundColor: '#bfdbfe', 
+                            fill:true, 
+                            tension:0.4 
+                        }] 
+                    },
+                    options: { 
+                        maintainAspectRatio: false, 
+                        plugins:{ 
+                            legend:{display:false},
+                            datalabels: { display: false } 
+                        }, 
+                        scales:{y:{beginAtZero:true, max:100}} 
+                    }
+                });
+            }
         }
 
         function toggleAdminStores() {
@@ -850,7 +960,7 @@
                         <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">${d.eval_type === 'form1' ? '웰컴/상담존' : '접객서비스'}</span>
                         <span class="text-xs text-gray-400 ml-1">${new Date(d.visit_time).toLocaleString()}</span>
                     </div>
-                    <span class="text-blue-700 font-bold text-lg">${d.total_score}점</span>
+                    <span class="text-white px-2 py-1 rounded font-bold text-sm shadow-sm" style="background-color: ${getScoreColor(d.total_score)}">${d.total_score}점</span>
                 </li>
             `).join('');
         }
@@ -861,7 +971,7 @@
             if(!evalData) return;
 
             document.getElementById('admin_search_container').classList.add('hidden');
-            document.getElementById('admin_dash_container').classList.add('hidden'); // 만약을 위해 대시보드도 숨김
+            document.getElementById('admin_dash_container').classList.add('hidden'); 
             document.getElementById('adminDetailContainer').classList.remove('hidden');
 
             const typeName = evalData.eval_type === 'form1' ? '웰컴존·상담존 모니터링' : '판매사원 접객·배웅 서비스 모니터링';
