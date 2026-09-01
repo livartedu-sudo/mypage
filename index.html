@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>접객서비스 모니터링 및 대시보드</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 엑셀(.xlsx) 생성 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <style>
+        /* iOS Safari UI 강제 초기화 */
+        input[type="datetime-local"], select, input[type="text"], input[type="password"], textarea, input[type="file"] {
+            -webkit-appearance: none !important; appearance: none !important;
+            box-sizing: border-box !important; width: 100% !important; max-width: 100% !important;
+            margin: 0 !important; border-radius: 0.5rem !important;
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem;
+            padding-right: 2.5rem !important;
+        }
+        input[type="datetime-local"] { display: flex !important; align-items: center !important; }
+        input[type="radio"] { -webkit-appearance: auto !important; appearance: auto !important; }
+    </style>
+</head>
+<body class="bg-gray-100 pb-20">
+
+    <!-- 로그인 오버레이 -->
+    <div id="login_overlay" class="fixed inset-0 bg-blue-700 flex flex-col items-center justify-center z-50 px-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">모니터링 시스템</h2>
+            <p class="text-gray-500 text-sm mb-6">접근을 위해 비밀번호를 입력해주세요.</p>
+            <input type="password" id="sitePassword" class="w-full h-12 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-center text-xl tracking-widest mb-4 font-bold" placeholder="비밀번호" onkeypress="if(event.key === 'Enter') login()">
+            <button onclick="login()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold h-12 rounded-lg shadow transition-colors">접속하기</button>
+        </div>
+    </div>
+
+    <!-- 앱 래퍼 -->
+    <div id="app_container" class="hidden max-w-xl mx-auto bg-white min-h-screen shadow-md relative">
+        
+        <!-- 상단 헤더 -->
+        <header class="bg-blue-700 text-white p-3 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+            <h1 class="font-bold text-base" id="headerTitle">접객서비스 모니터링</h1>
+            <div class="flex gap-1.5">
+                <button onclick="openEditMyEval()" class="bg-green-600 hover:bg-green-700 text-white text-xs py-1.5 px-2.5 rounded shadow font-bold">내 평가 수정</button>
+                <button id="toggleBtn" onclick="switchView()" class="bg-blue-900 hover:bg-blue-800 text-white text-xs py-1.5 px-2.5 rounded shadow font-bold">현황 보기</button>
+            </div>
+        </header>
+
+        <!-- [내 평가 수정 조회 뷰] -->
+        <div id="edit_search_view" class="hidden p-4 space-y-4 bg-gray-50 min-h-screen">
+            <h2 class="text-lg font-bold text-gray-800 border-b-2 border-gray-300 pb-2">내 평가 내역 조회 및 수정</h2>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-4">
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">본인 사번</label><input type="text" id="searchEmpId" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="사번 입력"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-1">수정용 비밀번호</label><input type="password" id="searchEditPw" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="평가 제출 시 입력했던 비밀번호"></div>
+                <button onclick="findMyEvals()" class="w-full bg-blue-700 text-white font-bold h-11 rounded-lg shadow hover:bg-blue-800 transition-colors">내역 조회하기</button>
+            </div>
+            <div id="myEvalListContainer" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hidden">
+                <ul id="myEvalList" class="divide-y divide-gray-200"></ul>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 1. 폼 뷰 -->
+        <!-- ========================================== -->
+        <div id="form_view">
+            <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6">
+                <!-- 기본 정보 섹션 -->
+                <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">구분</label>
+                            <select id="division" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                                <option value="">선택</option><option value="리빙">리빙</option><option value="집테리어">집테리어</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">매장명</label>
+                            <select id="storeName" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                                <option value="">매장 선택</option>
+                                <optgroup label="백화점"><option value="더현서">더현서</option><option value="무역">무역</option><option value="목동">목동</option><option value="천호">천호</option><option value="미아">미아</option><option value="신촌">신촌</option><option value="가산">가산</option><option value="판교">판교</option><option value="킨텍스">킨텍스</option><option value="중동">중동</option><option value="송도">송도</option><option value="김포">김포</option><option value="스페이스원">스페이스원</option><option value="충청">충청</option><option value="대구">대구</option><option value="대전아울렛">대전아울렛</option></optgroup>
+                                <optgroup label="로드샵"><option value="강남">강남</option><option value="용산">용산</option><option value="수원">수원</option><option value="고양">고양</option><option value="용인">용인</option><option value="기흥">기흥</option><option value="대전">대전</option><option value="울산">울산</option><option value="광주">광주</option><option value="부산">부산</option><option value="동부산">동부산</option></optgroup>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">방문 일시</label>
+                            <input type="datetime-local" id="visitTime" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">평일/주말</label>
+                            <select id="dayType" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                                <option value="">선택</option><option value="평일">평일</option><option value="주말/공휴일">주말/공휴일</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">매장 혼잡도</label>
+                            <select id="crowdedness" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                                <option value="">선택</option><option value="없음">없음</option><option value="여유">여유</option><option value="보통">보통</option><option value="혼잡">혼잡</option><option value="매우 혼잡">매우 혼잡</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">근무 인원</label>
+                            <select id="staffCount" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                                <option value="">선택</option><option value="0명">0명</option><option value="1명">1명</option><option value="2명">2명</option><option value="3명">3명</option><option value="4명">4명</option><option value="5명 이상">5명 이상</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 평가자 정보 섹션 -->
+                    <div class="border-t border-blue-200 pt-4 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 사번</label>
+                                <input type="text" id="empId" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="예: v123456" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 성명</label>
+                                <input type="text" id="empName" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="예: 홍길동" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- [추가] 평가자 직무 콤보박스 -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 직무</label>
+                                <select id="empRole" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
+                                    <option value="">선택</option>
+                                    <option value="리빙영업">리빙영업</option>
+                                    <option value="집테리어영업">집테리어영업</option>
+                                    <option value="지원">지원</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">수정 비밀번호</label>
+                                <input type="password" id="editPassword" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" placeholder="숫자 권장" required>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <label class="block text-base font-bold text-gray-800 mb-2">어떤 평가를 진행하시겠습니까?</label>
+                    <select id="evalType" onchange="toggleEvalForm()" class="h-12 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 shadow-sm" required>
+                        <option value="">-- 평가 종류 선택 --</option>
+                        <option value="form1">1. 웰컴존·상담존 모니터링 평가</option>
+                        <option value="form2">2. 판매사원 접객·배웅 서비스 수준 평가</option>
+                    </select>
+                </section>
+
+                <div id="form1_container" class="hidden space-y-6"></div>
+                <div id="form2_container" class="hidden space-y-6"></div>
+
+                <section id="feedback_container" class="hidden pt-4 border-t-2 border-gray-200 space-y-4">
+                    <div>
+                        <label class="block font-bold text-gray-800 mb-2">현장 사진 첨부 <span class="text-xs font-normal text-gray-500">(최대 5장 권장)</span></label>
+                        <input type="file" id="photoFiles" accept="image/*" multiple class="p-2 border border-gray-300 rounded-lg text-sm bg-white w-full">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-800 mb-2">평가자 의견 <span class="text-sm font-normal text-gray-500">(우수/미흡 등)</span></label>
+                        <textarea id="feedbackText" rows="4" class="p-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm text-gray-800" placeholder="자유롭게 주관식 의견을 작성해주세요."></textarea>
+                    </div>
+                    
+                    <button type="submit" id="submitBtn" class="mt-6 w-full bg-blue-700 text-white font-bold py-4 rounded-lg shadow hover:bg-blue-800 transition-colors text-lg">평가 제출하기</button>
+
+                    <div id="editActionBtns" class="hidden gap-2 mt-2">
+                        <button type="button" onclick="deleteEvaluation()" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg shadow hover:bg-red-700 transition-colors text-base">삭제하기</button>
+                        <button type="button" onclick="cancelEdit()" class="w-full bg-gray-500 text-white font-bold py-3 rounded-lg shadow hover:bg-gray-600 transition-colors text-base">수정 취소</button>
+                    </div>
+                </section>
+            </form>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 2. 일반 대시보드 화면 -->
+        <!-- ========================================== -->
+        <div id="dashboard_view" class="hidden p-4 space-y-6 bg-gray-50 min-h-screen">
+            <div class="space-y-4">
+                <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
+                    <button id="tabBtn1" onclick="switchDashboardTab('form1')" class="flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors">웰컴/상담존</button>
+                    <button id="tabBtn2" onclick="switchDashboardTab('form2')" class="flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors">접객서비스</button>
+                </div>
+                <div class="flex flex-col gap-3 border-b-2 border-gray-300 pb-3">
+                    <h2 id="dashboardTypeTitle" class="text-lg font-bold text-gray-800 whitespace-nowrap">웰컴존·상담존 모니터링 현황</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <select id="dashboardMonthFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm"><option value="all">전체 월</option></select>
+                        <select id="dashboardDivisionFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm"><option value="all">전체 구분</option><option value="리빙">리빙</option><option value="집테리어">집테리어</option></select>
+                        <select id="dashboardDayTypeFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm"><option value="all">평일/주말</option><option value="평일">평일</option><option value="주말/공휴일">주말/공휴일</option></select>
+                        <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
+                            <option value="all">전체 매장</option>
+                            <optgroup label="백화점"><option value="더현서">더현서</option><option value="무역">무역</option><option value="목동">목동</option><option value="천호">천호</option><option value="미아">미아</option><option value="신촌">신촌</option><option value="가산">가산</option><option value="판교">판교</option><option value="킨텍스">킨텍스</option><option value="중동">중동</option><option value="송도">송도</option><option value="김포">김포</option><option value="스페이스원">스페이스원</option><option value="충청">충청</option><option value="대구">대구</option><option value="대전아울렛">대전아울렛</option></optgroup>
+                            <optgroup label="로드샵"><option value="강남">강남</option><option value="용산">용산</option><option value="수원">수원</option><option value="고양">고양</option><option value="용인">용인</option><option value="기흥">기흥</option><option value="대전">대전</option><option value="울산">울산</option><option value="광주">광주</option><option value="부산">부산</option><option value="동부산">동부산</option></optgroup>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-sm text-gray-500 font-semibold mb-1">총 평가 건수</p><p class="text-3xl font-bold text-blue-700" id="totalCount">0건</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <p class="text-sm text-gray-500 font-semibold mb-1">전체 평균 점수</p><p class="text-3xl font-bold text-blue-700" id="totalAvg">0점</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">구분별 평균 점수 요약 (100점 환산)</h3>
+                <div class="h-64"><canvas id="scoreChart"></canvas></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">세부 항목별 평균 점수 (100점 환산)</h3>
+                <div id="detailedScoresList" class="space-y-4"></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">최근 모니터링 내역</h3>
+                <div id="recentEvalList" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 3. [고도화된] 관리자 화면 -->
+        <!-- ========================================== -->
+        <div id="admin_view" class="hidden p-4 space-y-4 bg-gray-50 min-h-screen">
+            <div class="flex justify-between items-center mb-2 border-b-2 border-gray-300 pb-2">
+                <h2 class="text-xl font-bold text-red-700">관리자 시스템</h2>
+                <div class="flex gap-2">
+                    <button onclick="downloadExcel()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm shadow font-bold">엑셀 다운로드</button>
+                    <button onclick="closeAdmin()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm shadow">닫기</button>
+                </div>
+            </div>
+
+            <!-- 관리자 탭 -->
+            <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
+                <button id="adminTabDash" onclick="switchAdminTab('dash')" class="flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors">대시보드</button>
+                <button id="adminTabSearch" onclick="switchAdminTab('search')" class="flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors">평가지 조회</button>
+            </div>
+
+            <!-- 3-1. 관리자 대시보드 뷰 -->
+            <div id="admin_dash_container" class="space-y-4">
+                <select id="adminDashMonth" onchange="updateAdminDash()" class="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm">
+                    <option value="all">누적 데이터 전체</option>
+                </select>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 text-sm mb-3">사업부별 평균 비교</h3>
+                        <div class="h-40"><canvas id="adminDivChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 text-sm mb-3">평가자 직무별 평균 비교</h3>
+                        <div class="h-40"><canvas id="adminRoleChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-gray-800 text-sm">점포별 평균 순위 <span id="adminStoreTitleSpan" class="text-blue-600">(TOP 5)</span></h3>
+                        <button onclick="toggleAdminStores()" id="adminStoreToggleBtn" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold hover:bg-blue-200">전체보기</button>
+                    </div>
+                    <div id="adminStoreChartWrapper" class="h-64"><canvas id="adminStoreChart"></canvas></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-gray-800 text-sm mb-3">방문 시간대별 평균 점수 흐름</h3>
+                    <div class="h-48"><canvas id="adminTimeChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- 3-2. 관리자 검색 뷰 -->
+            <div id="admin_search_container" class="hidden space-y-4">
+                <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 space-y-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <select id="adminSearchMonth" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">전체 월</option></select>
+                        <select id="adminSearchDiv" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">구분 전체</option><option value="리빙">리빙</option><option value="집테리어">집테리어</option></select>
+                        <select id="adminSearchStore" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">매장 전체</option>
+                            <optgroup label="백화점"><option value="더현서">더현서</option><option value="무역">무역</option><option value="목동">목동</option><option value="천호">천호</option><option value="미아">미아</option><option value="신촌">신촌</option><option value="가산">가산</option><option value="판교">판교</option><option value="킨텍스">킨텍스</option><option value="중동">중동</option><option value="송도">송도</option><option value="김포">김포</option><option value="스페이스원">스페이스원</option><option value="충청">충청</option><option value="대구">대구</option><option value="대전아울렛">대전아울렛</option></optgroup>
+                            <optgroup label="로드샵"><option value="강남">강남</option><option value="용산">용산</option><option value="수원">수원</option><option value="고양">고양</option><option value="용인">용인</option><option value="기흥">기흥</option><option value="대전">대전</option><option value="울산">울산</option><option value="광주">광주</option><option value="부산">부산</option><option value="동부산">동부산</option></optgroup>
+                        </select>
+                        <select id="adminSearchDay" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">요일 전체</option><option value="평일">평일</option><option value="주말/공휴일">주말/공휴일</option></select>
+                    </div>
+                    <div class="flex gap-2 pt-1 border-t border-gray-100">
+                        <input type="text" id="adminSearchText" placeholder="평가자 이름 (예: 홍길동)" class="flex-1 h-10 px-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm" onkeypress="if(event.key==='Enter') updateAdminSearchList()">
+                        <button onclick="updateAdminSearchList()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 rounded font-bold shadow-sm">검색</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div id="adminSearchCount" class="bg-gray-50 text-xs font-bold text-gray-500 p-2 border-b border-gray-200 text-right">0건 조회됨</div>
+                    <ul id="adminList" class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto"></ul>
+                </div>
+            </div>
+
+            <!-- 3-3. 상세 답안지 뷰 -->
+            <div id="adminDetailContainer" class="hidden space-y-4">
+                <button onclick="backToAdminList()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded text-sm font-bold shadow-sm hover:bg-gray-300">← 목록으로 돌아가기</button>
+                <div id="adminDetailContent" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <footer class="text-center py-8">
+            <button onclick="checkAdminPassword()" class="text-xs text-gray-300 hover:text-gray-500 underline transition-colors">관리자 전용 페이지</button>
+        </footer>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://agysoivrjsbbtiqlsxud.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFneXNvaXZyanNiYnRpcWxzeHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3OTA3NzIsImV4cCI6MjEwMzM2Njc3Mn0.pMfOlCkNeF1pbuyTUHBzOgC5FziWOeXeKMTH16vARJw';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentView = 'form';
+        let allDashboardData = [];
+        let currentDashboardTab = 'form1';
+        let myChart = null;
+        let editModeId = null; 
+        let myEvalsData = [];
+
+        // 관리자용 차트 변수
+        let aChartDiv=null, aChartRole=null, aChartStore=null, aChartTime=null;
+        let showAllStoresAdmin = false;
+
+        function login() {
+            if (document.getElementById('sitePassword').value === 'livart2026') { 
+                document.getElementById('login_overlay').classList.add('hidden');
+                document.getElementById('app_container').classList.remove('hidden');
+                window.scrollTo(0, 0); 
+            } else {
+                alert('비밀번호가 일치하지 않습니다.');
+                document.getElementById('sitePassword').value = '';
+            }
+        }
+
+        async function switchView() {
+            window.scrollTo(0, 0); 
+            const formView = document.getElementById('form_view');
+            const dashboardView = document.getElementById('dashboard_view');
+            const adminView = document.getElementById('admin_view');
+            const editView = document.getElementById('edit_search_view');
+            const btn = document.getElementById('toggleBtn');
+            const title = document.getElementById('headerTitle');
+
+            editView.classList.add('hidden'); 
+
+            if (currentView === 'form' || currentView === 'admin') {
+                formView.classList.add('hidden');
+                adminView.classList.add('hidden');
+                dashboardView.classList.remove('hidden');
+                btn.innerText = '평가 작성하기';
+                title.innerText = '모니터링 현황';
+                currentView = 'dashboard';
+                await loadDashboardData();
+            } else {
+                dashboardView.classList.add('hidden');
+                adminView.classList.add('hidden');
+                formView.classList.remove('hidden');
+                btn.innerText = '현황 보기';
+                title.innerText = '접객서비스 모니터링';
+                currentView = 'form';
+                if(editModeId) cancelEdit();
+            }
+        }
+
+        function switchDashboardTab(type) {
+            currentDashboardTab = type;
+            const btn1 = document.getElementById('tabBtn1'), btn2 = document.getElementById('tabBtn2');
+            if (type === 'form1') {
+                btn1.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                btn2.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                document.getElementById('dashboardTypeTitle').innerText = "웰컴존·상담존 모니터링 현황";
+            } else {
+                btn2.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                btn1.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                document.getElementById('dashboardTypeTitle').innerText = "판매사원 접객·배웅 서비스 모니터링 현황";
+            }
+            updateDashboardUI();
+        }
+
+        function openEditMyEval() {
+            window.scrollTo(0,0);
+            document.getElementById('form_view').classList.add('hidden');
+            document.getElementById('dashboard_view').classList.add('hidden');
+            document.getElementById('admin_view').classList.add('hidden');
+            document.getElementById('edit_search_view').classList.remove('hidden');
+            document.getElementById('headerTitle').innerText = '내 평가 수정';
+            document.getElementById('toggleBtn').innerText = '평가 작성하기'; 
+            currentView = 'form'; 
+        }
+
+        async function findMyEvals() {
+            const empId = document.getElementById('searchEmpId').value;
+            const editPw = document.getElementById('searchEditPw').value;
+            if(!empId || !editPw) return alert("사번과 비밀번호를 모두 입력해주세요.");
+            const { data, error } = await supabaseClient.from('evaluations').select('*').eq('emp_id', empId).eq('edit_password', editPw).order('created_at', { ascending: false });
+            if (error) return alert("조회 오류");
+            myEvalsData = data || [];
+            document.getElementById('myEvalListContainer').classList.remove('hidden');
+            if(myEvalsData.length === 0) return document.getElementById('myEvalList').innerHTML = '<li class="p-4 text-center text-gray-500">일치하는 내역 없음</li>';
+            document.getElementById('myEvalList').innerHTML = myEvalsData.map(d => `
+                <li class="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center" onclick="loadEvalToForm(${d.id})">
+                    <div>
+                        <span class="font-bold text-gray-800 block">[${d.visit_time ? d.visit_time.substring(0,10) : ''}] ${d.store_name}</span>
+                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${d.eval_type === 'form1' ? '웰컴/상담존' : '접객/배웅'}</span>
+                    </div>
+                    <span class="text-gray-500 text-sm font-semibold">수정/삭제 ➔</span>
+                </li>
+            `).join('');
+        }
+
+        function loadEvalToForm(id) {
+            const data = myEvalsData.find(d => d.id === id);
+            if(!data) return;
+            document.getElementById('division').value = data.division || '';
+            document.getElementById('storeName').value = data.store_name || '';
+            document.getElementById('visitTime').value = data.visit_time ? data.visit_time.slice(0,16) : '';
+            document.getElementById('dayType').value = data.day_type || '';
+            document.getElementById('crowdedness').value = data.crowdedness || '';
+            document.getElementById('staffCount').value = data.staff_count || '';
+            document.getElementById('empId').value = data.emp_id || '';
+            document.getElementById('empName').value = data.emp_name || '';
+            document.getElementById('empRole').value = data.emp_role || '';
+            document.getElementById('editPassword').value = data.edit_password || '';
+            document.getElementById('evalType').value = data.eval_type || '';
+            toggleEvalForm();
+
+            if(data.raw_scores) {
+                for (let qId in data.raw_scores) {
+                    const radio = document.querySelector(`input[name="${qId}"][value="${data.raw_scores[qId]}"]`);
+                    if(radio) radio.checked = true;
+                }
+            }
+            document.getElementById('feedbackText').value = data.feedback || '';
+            editModeId = id;
+            document.getElementById('edit_search_view').classList.add('hidden');
+            document.getElementById('form_view').classList.remove('hidden');
+            document.getElementById('headerTitle').innerText = '평가 수정/삭제하기';
+            document.getElementById('submitBtn').innerText = '수정된 내용 저장하기';
+            
+            const btns = document.getElementById('editActionBtns');
+            btns.classList.remove('hidden'); btns.classList.add('grid', 'grid-cols-2');
+            window.scrollTo(0,0);
+        }
+
+        function cancelEdit() {
+            editModeId = null;
+            document.getElementById('evaluationForm').reset();
+            toggleEvalForm();
+            document.getElementById('headerTitle').innerText = '접객서비스 모니터링';
+            document.getElementById('submitBtn').innerText = '평가 제출하기';
+            const btns = document.getElementById('editActionBtns');
+            btns.classList.add('hidden'); btns.classList.remove('grid', 'grid-cols-2');
+            window.scrollTo(0,0);
+        }
+
+        async function deleteEvaluation() {
+            if (!editModeId) return;
+            if (!confirm("정말로 삭제하시겠습니까?\n(복구 불가)")) return;
+            try {
+                const { error } = await supabaseClient.from('evaluations').delete().eq('id', editModeId);
+                if (error) throw error;
+                alert('삭제되었습니다.');
+                cancelEdit(); 
+            } catch (err) { alert('삭제 오류: ' + err.message); }
+        }
+
+        async function uploadPhotos() {
+            const files = document.getElementById('photoFiles').files;
+            if (files.length === 0) return [];
+            if (files.length > 5) { alert("사진은 최대 5장까지만 첨부할 수 있습니다."); throw new Error("사진 장수 초과"); }
+
+            const uploadedUrls = [];
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > 5 * 1024 * 1024) { alert(`${files[i].name} 용량이 5MB 초과`); throw new Error("사진 용량 초과"); }
+                const fileName = `${Date.now()}_${Math.floor(Math.random() * 10000)}.${files[i].name.split('.').pop()}`;
+                const { error } = await supabaseClient.storage.from('photos').upload(fileName, files[i]);
+                if (error) { alert("사진 업로드 오류"); throw error; }
+                uploadedUrls.push(supabaseClient.storage.from('photos').getPublicUrl(fileName).data.publicUrl);
+            }
+            return uploadedUrls;
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            const evalType = document.getElementById('evalType').value;
+            const questions = evalType === 'form1' ? questionsForm1 : questionsForm2;
+            let totalSum = 0, totalValidCount = 0;
+            const catStats = {}, rawScores = {}; 
+
+            for (let q of questions) {
+                const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+                if (!selected) return alert('모든 문항을 빠짐없이 선택해주세요.');
+                const val = selected.value;
+                rawScores[q.id] = val; 
+                if (!catStats[q.cat]) catStats[q.cat] = { sum: 0, count: 0 };
+                if (val !== 'NA') {
+                    const num = parseInt(val);
+                    totalSum += num; totalValidCount++;
+                    catStats[q.cat].sum += num; catStats[q.cat].count++;
+                }
+            }
+            if (totalValidCount === 0) return alert('모든 문항이 N/A로 점수를 산출할 수 없습니다.');
+            const totalScore = Math.round((totalSum / totalValidCount) * 20);
+            const categoryScores = {};
+            for (let cat in catStats) categoryScores[cat] = catStats[cat].count > 0 ? Math.round((catStats[cat].sum / catStats[cat].count) * 20) : null;
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true; submitBtn.innerText = '저장 중...';
+
+            try {
+                const imageUrls = await uploadPhotos();
+                const payload = {
+                    division: document.getElementById('division').value,
+                    store_name: document.getElementById('storeName').value,
+                    visit_time: document.getElementById('visitTime').value,
+                    day_type: document.getElementById('dayType').value,
+                    crowdedness: document.getElementById('crowdedness').value,
+                    staff_count: document.getElementById('staffCount').value,
+                    emp_id: document.getElementById('empId').value,
+                    emp_name: document.getElementById('empName').value,
+                    emp_role: document.getElementById('empRole').value, // 추가
+                    edit_password: document.getElementById('editPassword').value,
+                    eval_type: evalType, total_score: totalScore, category_scores: categoryScores, raw_scores: rawScores, 
+                    feedback: document.getElementById('feedbackText').value || null
+                };
+                if (imageUrls.length > 0) payload.image_urls = imageUrls;
+
+                if (editModeId) {
+                    const { error } = await supabaseClient.from('evaluations').update(payload).eq('id', editModeId);
+                    if (error) throw error;
+                    alert('수정 완료!'); cancelEdit(); 
+                } else {
+                    const { error } = await supabaseClient.from('evaluations').insert([payload]);
+                    if (error) throw error;
+                    alert('제출 완료!'); document.getElementById('evaluationForm').reset(); toggleEvalForm(); window.scrollTo(0, 0);
+                }
+            } catch (err) {
+                if(err.message !== "사진 장수 초과" && err.message !== "사진 용량 초과") alert('저장 오류: ' + err.message);
+            } finally {
+                submitBtn.disabled = false; submitBtn.innerText = editModeId ? '수정된 내용 저장하기' : '평가 제출하기';
+            }
+        }
+
+        function toggleEvalForm() {
+            const type = document.getElementById('evalType').value;
+            document.getElementById('form1_container').classList.toggle('hidden', type !== 'form1');
+            document.getElementById('form2_container').classList.toggle('hidden', type !== 'form2');
+            document.getElementById('feedback_container').classList.toggle('hidden', type === '');
+        }
+
+        // ========================== 질문 데이터 ==========================
+        const questionsForm1 = [
+            { id: "f1_q1", cat: "웰컴존", title: "지정·운영 여부", desc: "지정된 웰컴존에서 실제 고객 접점이 형성되고 있는가?" },
+            { id: "f1_q2", cat: "웰컴존", title: "위치 적정성", desc: "고객 동선에서 고객을 자연스럽게 인지·응대할 수 있는 위치에 있는가?" },
+            { id: "f1_q3", cat: "웰컴존", title: "우선순위", desc: "복수 웰컴존 운영 시 ①→②→③ 순으로 적절하게 운영되고 있는가?" },
+            { id: "f1_q4", cat: "웰컴존", title: "공백 대응", desc: "웰컴존이 비어 있는 상황에서도 고객인지가 이루어지고 있는가?" },
+            { id: "f1_q5", cat: "상담존", title: "위치 적정성", desc: "상담이 고객시야가 확보된 위치에서 이루어지고 있는가?" },
+            { id: "f1_q6", cat: "상담존", title: "상담 중 고객인지", desc: "상담 중에도 신규 고객을 인지할 수 있는 구조 및 행동이 이루어지는가?" },
+            { id: "f1_q7", cat: "상황별 운영", title: "1인 근무대응", desc: "1인 근무 시 상담과 고객인지가 상황에 맞게 병행되고 있는가?" },
+            { id: "f1_q8", cat: "상황별 운영", title: "복수인원 운영", desc: "상담 발생 시 웰컴존 ①→②→③ 순으로 적절하게 전환되고 있는가?" },
+            { id: "f1_q9", cat: "상황별 운영", title: "PeakTime 대응(1)", desc: "고객유입 집중 시 고객인지 및 공통인사를 하는가?" },
+            { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응(2)", desc: "전원상담 시 상황 주시, 인지 표현, 대기고객 발생에 따른 양해 표현을 하는가?" }
+        ];
+
+        const questionsForm2 = [
+            { id: "f2_q1", cat: "고객인지 및 입점", title: "고객인지(상담중)", desc: "고객 입점 시 고객을 인지하고 눈맞춤·미소·인사로 반응하는가?" },
+            { id: "f2_q2", cat: "고객인지 및 입점", title: "입점인사(대기중)", desc: "고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?" },
+            { id: "f2_q3", cat: "탐색", title: "자율 탐색 배려", desc: "고객이 편안하게 매장을 둘러볼 수 있도록 적정 거리를 유지하는가?" },
+            { id: "f2_q4", cat: "탐색", title: "적절한 접근", desc: "고객의 관심·행동을 관찰하고 고객이 도움을 필요로 할 때 적절하게 응대하는가?" },
+            { id: "f2_q5", cat: "상담·연결", title: "신규고객 대응", desc: "상담 중 신규 고객 발생 시 기존 고객 상담과 신규 고객 인지를 적절히 병행하는가?" },
+            { id: "f2_q6", cat: "상담·연결", title: "대기고객 안내", desc: "상담 대기 발생 시 고객에게 상황 및 예상 대기시간 등을 적절히 안내하는가?" },
+            { id: "f2_q7", cat: "배웅", title: "배웅실행(응대고객)", desc: "고객 퇴점 시 감사·인사 등 적절한 배웅이 이루어지는가?" },
+            { id: "f2_q8", cat: "배웅", title: "배웅(탐색·비구매고객)", desc: "구매·상담 고객뿐 아니라 단순 탐색 고객까지 일관되게 배웅하는가?" },
+            { id: "f2_q9", cat: "용모/태도", title: "용모 복장", desc: "깔끔한 용모와 판매자로서 적합한 복장을 갖추고 응대하였는가?" },
+            { id: "f2_q10", cat: "용모/태도", title: "톤앤매너", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?" }
+        ];
+
+        function renderQuestions(containerId, questions, savedAnswers = null) {
+            const container = document.getElementById(containerId);
+            const isReadOnly = savedAnswers !== null;
+            let html = `<div class="flex justify-between text-xs font-bold text-gray-500 mb-4 px-2 text-center bg-gray-50 rounded py-2">
+                <div><span class="text-red-500 font-extrabold text-sm block">1점</span>매우 부정</div><div class="text-xl text-gray-400">↔</div><div><span class="text-blue-600 font-extrabold text-sm block">5점</span>매우 긍정</div></div>`;
+            questions.forEach((q, index) => {
+                const ans = isReadOnly ? savedAnswers[q.id] : null; 
+                html += `<div class="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4 ${isReadOnly ? 'opacity-95' : ''}">
+                    <div class="flex items-center gap-2 mb-2"><span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${q.cat}</span><h3 class="font-bold text-gray-800">${index + 1}. ${q.title}</h3></div>
+                    <p class="text-sm text-gray-600 mb-4">${q.desc}</p><div class="flex justify-between gap-1">`;
+                [1,2,3,4,5].forEach(score => {
+                    html += `<label class="flex-1 text-center ${isReadOnly ? '' : 'cursor-pointer'}"><input type="radio" name="${isReadOnly ? 'admin_'+q.id : q.id}" value="${score}" class="peer sr-only" ${isReadOnly ? 'disabled' : ''} ${ans === String(score) ? 'checked' : ''}><div class="py-2 border border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:text-white ${isReadOnly ? '' : 'hover:bg-gray-50'} font-medium transition-colors">${score}</div></label>`;
+                });
+                html += `<label class="flex-1 text-center ${isReadOnly ? '' : 'cursor-pointer'}"><input type="radio" name="${isReadOnly ? 'admin_'+q.id : q.id}" value="NA" class="peer sr-only" ${isReadOnly ? 'disabled' : ''} ${ans === 'NA' ? 'checked' : ''}><div class="py-2 border border-gray-300 rounded peer-checked:bg-gray-500 peer-checked:text-white text-xs font-medium flex items-center justify-center transition-colors break-keep">확인 불가</div></label></div></div>`;
+            });
+            container.innerHTML = html;
+        }
+        renderQuestions('form1_container', questionsForm1);
+        renderQuestions('form2_container', questionsForm2);
+
+        // ========================== 일반 대시보드 로직 ==========================
+        async function loadDashboardData() {
+            try {
+                const { data, error } = await supabaseClient.from('evaluations').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                allDashboardData = data || [];
+                
+                const monthFilter = document.getElementById('dashboardMonthFilter');
+                const months = [...new Set(allDashboardData.map(d => d.visit_time ? d.visit_time.substring(0, 7) : ''))].filter(Boolean).sort().reverse();
+                monthFilter.innerHTML = '<option value="all">전체 월</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+
+                updateDashboardUI();
+            } catch (err) { alert('데이터 로드 실패'); }
+        }
+
+        function updateDashboardUI() {
+            const filterMonth = document.getElementById('dashboardMonthFilter').value;
+            const filterDivision = document.getElementById('dashboardDivisionFilter').value;
+            const filterDayType = document.getElementById('dashboardDayTypeFilter').value;
+            const filterStore = document.getElementById('dashboardStoreFilter').value;
+            
+            const targetData = allDashboardData.filter(d => {
+                const matchTab = d.eval_type === currentDashboardTab;
+                const matchMonth = (filterMonth === 'all' || (d.visit_time && d.visit_time.startsWith(filterMonth)));
+                return matchTab && matchMonth && 
+                       (filterDivision === 'all' || d.division === filterDivision) &&
+                       (filterDayType === 'all' || d.day_type === filterDayType) &&
+                       (filterStore === 'all' || d.store_name === filterStore);
+            });
+
+            if (targetData.length === 0) {
+                document.getElementById('totalCount').innerText = '0건'; document.getElementById('totalAvg').innerText = '0점';
+                document.getElementById('detailedScoresList').innerHTML = '<p class="text-center text-sm py-4 text-gray-400">데이터 없음</p>';
+                document.getElementById('recentEvalList').innerHTML = '<p class="text-center text-sm py-4 text-gray-400">데이터 없음</p>';
+                if(myChart) myChart.destroy();
+                return;
+            }
+
+            const totalCount = targetData.length;
+            const overallAvg = Math.round(targetData.reduce((acc, cur) => acc + cur.total_score, 0) / totalCount);
+            document.getElementById('totalCount').innerText = `${totalCount}건`;
+            document.getElementById('totalAvg').innerText = `${overallAvg}점`;
+
+            const questions = currentDashboardTab === 'form1' ? questionsForm1 : questionsForm2;
+            const categories = currentDashboardTab === 'form1' ? ['웰컴존', '상담존', '상황별 운영'] : ['고객인지 및 입점', '탐색', '상담·연결', '배웅', '용모/태도'];
+            const itemAgg = {};
+            questions.forEach(q => itemAgg[q.cat] = { items: [], sum: 0, cnt: 0 });
+            questions.forEach(q => itemAgg[q.cat].items.push({ title: q.title, id: q.id, sum: 0, cnt: 0 }));
+
+            targetData.forEach(d => {
+                if (!d.raw_scores) return;
+                questions.forEach(q => {
+                    const val = d.raw_scores[q.id];
+                    if (val && val !== 'NA') {
+                        const score = parseInt(val);
+                        const i = itemAgg[q.cat].items.find(x => x.id === q.id);
+                        i.sum += score; i.cnt++;
+                        itemAgg[q.cat].sum += score; itemAgg[q.cat].cnt++;
+                    }
+                });
+            });
+
+            const chartScores = categories.map(c => itemAgg[c].cnt > 0 ? Math.round((itemAgg[c].sum / itemAgg[c].cnt) * 20) : 0);
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, { type: 'bar', data: { labels: categories, datasets: [{ data: chartScores, backgroundColor: '#3b82f6', borderRadius: 4 }] }, options: { indexAxis: 'y', plugins:{legend:{display:false}}, maintainAspectRatio: false } });
+
+            let detailedHtml = '';
+            categories.forEach(cat => {
+                const cAvg = itemAgg[cat].cnt > 0 ? Math.round((itemAgg[cat].sum / itemAgg[cat].cnt) * 20) : 0;
+                detailedHtml += `<div class="border border-gray-200 rounded-lg overflow-hidden"><div class="bg-blue-50 p-3 font-bold flex justify-between"><span>${cat}</span><span class="text-blue-700">${cAvg}점</span></div><div class="p-3 space-y-3 bg-white">`;
+                itemAgg[cat].items.forEach(item => {
+                    const iAvg = item.cnt > 0 ? Math.round((item.sum / item.cnt) * 20) : 0;
+                    detailedHtml += `<div class="flex justify-between text-sm text-gray-600"><span>${item.title}</span><span class="font-bold text-gray-800">${item.cnt>0?iAvg+'점':'없음'}</span></div>`;
+                });
+                detailedHtml += `</div></div>`;
+            });
+            document.getElementById('detailedScoresList').innerHTML = detailedHtml;
+            document.getElementById('recentEvalList').innerHTML = targetData.slice(0, 15).map(d => `<div class="flex justify-between items-center bg-gray-50 p-3 rounded border text-sm"><span class="font-bold">[${d.division||'-'}] ${d.store_name} - ${d.emp_name}</span><span class="text-blue-700 font-semibold">${d.total_score}점</span></div>`).join('');
+        }
+
+        // ========================== 관리자 페이지 로직 ==========================
+        function checkAdminPassword() {
+            const pw = prompt('관리자 전용 비밀번호를 입력하세요:');
+            if (pw === '3480') openAdminView();
+            else if (pw !== null) alert('비밀번호가 일치하지 않습니다.');
+        }
+
+        async function openAdminView() {
+            window.scrollTo(0, 0); 
+            document.getElementById('form_view').classList.add('hidden');
+            document.getElementById('dashboard_view').classList.add('hidden');
+            document.getElementById('edit_search_view').classList.add('hidden');
+            document.getElementById('admin_view').classList.remove('hidden');
+            document.getElementById('headerTitle').innerText = '관리자 시스템';
+            document.getElementById('toggleBtn').innerText = '현황 보기';
+            currentView = 'admin';
+
+            document.getElementById('adminDetailContainer').classList.add('hidden');
+            
+            const { data, error } = await supabaseClient.from('evaluations').select('*').order('created_at', { ascending: false });
+            if (error) return alert("데이터 로드 실패");
+            allDashboardData = data || [];
+            
+            // 관리자용 공통 필터(월) 세팅
+            const months = [...new Set(allDashboardData.map(d => d.visit_time ? d.visit_time.substring(0, 7) : ''))].filter(Boolean).sort().reverse();
+            const dashMonth = document.getElementById('adminDashMonth');
+            const searchMonth = document.getElementById('adminSearchMonth');
+            dashMonth.innerHTML = '<option value="all">누적 데이터 전체</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+            searchMonth.innerHTML = '<option value="all">전체 월</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+
+            switchAdminTab('dash'); // 진입 시 대시보드 기본 표시
+        }
+
+        function switchAdminTab(tab) {
+            const btnDash = document.getElementById('adminTabDash');
+            const btnSearch = document.getElementById('adminTabSearch');
+            const viewDash = document.getElementById('admin_dash_container');
+            const viewSearch = document.getElementById('admin_search_container');
+            const listCont = document.getElementById('adminListContainer');
+            
+            if(tab === 'dash') {
+                btnDash.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                btnSearch.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                viewDash.classList.remove('hidden');
+                viewSearch.classList.add('hidden');
+                listCont.classList.add('hidden');
+                updateAdminDash();
+            } else {
+                btnDash.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                btnSearch.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                viewDash.classList.add('hidden');
+                viewSearch.classList.remove('hidden');
+                listCont.classList.remove('hidden');
+                updateAdminSearchList();
+            }
+        }
+
+        // --- 관리자 대시보드 (차트 생성) ---
+        function updateAdminDash() {
+            const filterMonth = document.getElementById('adminDashMonth').value;
+            const targetData = allDashboardData.filter(d => filterMonth === 'all' || (d.visit_time && d.visit_time.startsWith(filterMonth)));
+
+            // 공통 그룹 평균 계산 함수
+            const getGroupAvg = (data, keyFn) => {
+                const grp = {};
+                data.forEach(d => {
+                    const k = keyFn(d);
+                    if(!k) return;
+                    if(!grp[k]) grp[k] = {sum:0, cnt:0};
+                    grp[k].sum += d.total_score; grp[k].cnt++;
+                });
+                return Object.keys(grp).map(k => ({ label: k, avg: Math.round(grp[k].sum / grp[k].cnt) }));
+            };
+
+            // 1. 사업부별 비교
+            const divData = getGroupAvg(targetData, d => d.division);
+            if(aChartDiv) aChartDiv.destroy();
+            aChartDiv = new Chart(document.getElementById('adminDivChart').getContext('2d'), {
+                type: 'bar', data: { labels: divData.map(x=>x.label), datasets: [{ data: divData.map(x=>x.avg), backgroundColor: '#3b82f6', borderRadius:4 }] },
+                options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
+            });
+
+            // 2. 직무별 비교 (데이터가 없을 시 '미입력' 처리)
+            const roleData = getGroupAvg(targetData, d => d.emp_role || '미입력');
+            if(aChartRole) aChartRole.destroy();
+            aChartRole = new Chart(document.getElementById('adminRoleChart').getContext('2d'), {
+                type: 'bar', data: { labels: roleData.map(x=>x.label), datasets: [{ data: roleData.map(x=>x.avg), backgroundColor: '#10b981', borderRadius:4 }] },
+                options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
+            });
+
+            // 3. 점포별 평균 (정렬 및 TOP5 처리)
+            let storeData = getGroupAvg(targetData, d => d.store_name).sort((a,b) => b.avg - a.avg);
+            if(!showAllStoresAdmin) storeData = storeData.slice(0, 5);
+            
+            document.getElementById('adminStoreTitleSpan').innerText = showAllStoresAdmin ? "(전체)" : "(TOP 5)";
+            document.getElementById('adminStoreToggleBtn').innerText = showAllStoresAdmin ? "TOP 5 보기" : "전체보기";
+            document.getElementById('adminStoreChartWrapper').style.height = showAllStoresAdmin ? (storeData.length * 30 + 50) + "px" : "250px";
+
+            if(aChartStore) aChartStore.destroy();
+            aChartStore = new Chart(document.getElementById('adminStoreChart').getContext('2d'), {
+                type: 'bar', data: { labels: storeData.map(x=>x.label), datasets: [{ data: storeData.map(x=>x.avg), backgroundColor: '#f59e0b', borderRadius:4 }] },
+                options: { indexAxis: 'y', maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, max:100}} }
+            });
+
+            // 4. 시간대별 비교 (10시, 11시...)
+            const timeDataRaw = getGroupAvg(targetData, d => {
+                if(!d.visit_time) return null;
+                const h = new Date(d.visit_time).getHours();
+                return isNaN(h) ? null : h; // 숫자로 뽑기 (정렬 위해)
+            });
+            const timeData = timeDataRaw.sort((a,b) => parseInt(a.label) - parseInt(b.label)).map(x => ({label: x.label + "시", avg: x.avg}));
+            if(aChartTime) aChartTime.destroy();
+            aChartTime = new Chart(document.getElementById('adminTimeChart').getContext('2d'), {
+                type: 'line', data: { labels: timeData.map(x=>x.label), datasets: [{ label: '시간대별 평균', data: timeData.map(x=>x.avg), borderColor: '#8b5cf6', backgroundColor: '#bfdbfe', fill:true, tension:0.4 }] },
+                options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
+            });
+        }
+
+        function toggleAdminStores() {
+            showAllStoresAdmin = !showAllStoresAdmin;
+            updateAdminDash();
+        }
+
+        // --- 관리자 평가지 조회 (검색) ---
+        function updateAdminSearchList() {
+            const mon = document.getElementById('adminSearchMonth').value;
+            const div = document.getElementById('adminSearchDiv').value;
+            const store = document.getElementById('adminSearchStore').value;
+            const day = document.getElementById('adminSearchDay').value;
+            const text = document.getElementById('adminSearchText').value.trim();
+
+            const filtered = allDashboardData.filter(d => {
+                if(mon !== 'all' && (!d.visit_time || !d.visit_time.startsWith(mon))) return false;
+                if(div !== 'all' && d.division !== div) return false;
+                if(store !== 'all' && d.store_name !== store) return false;
+                if(day !== 'all' && d.day_type !== day) return false;
+                if(text !== '' && (!d.emp_name || !d.emp_name.includes(text))) return false;
+                return true;
+            });
+
+            document.getElementById('adminSearchCount').innerText = `${filtered.length}건 조회됨`;
+            const listEl = document.getElementById('adminList');
+            if(filtered.length === 0) {
+                listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">조건에 맞는 데이터가 없습니다.</p>';
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(d => `
+                <li class="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center transition-colors" onclick="showAdminDetail(${d.id})">
+                    <div>
+                        <span class="font-bold text-gray-800 block mb-1">[${d.division || '-'}] ${d.store_name} - ${d.emp_name} <span class="text-xs text-gray-400 font-normal">(${d.emp_role||'직무미입력'})</span></span>
+                        <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">${d.eval_type === 'form1' ? '웰컴/상담존' : '접객서비스'}</span>
+                        <span class="text-xs text-gray-400 ml-1">${new Date(d.visit_time).toLocaleString()}</span>
+                    </div>
+                    <span class="text-blue-700 font-bold text-lg">${d.total_score}점</span>
+                </li>
+            `).join('');
+        }
+
+        // --- 관리자 상세 내역 ---
+        function showAdminDetail(id) {
+            window.scrollTo(0, 0); 
+            const evalData = allDashboardData.find(d => d.id === id);
+            if(!evalData) return;
+
+            document.getElementById('adminListContainer').classList.add('hidden');
+            document.getElementById('admin_search_container').classList.add('hidden');
+            document.getElementById('adminDetailContainer').classList.remove('hidden');
+
+            const typeName = evalData.eval_type === 'form1' ? '웰컴존·상담존 모니터링' : '판매사원 접객·배웅 서비스 모니터링';
+            
+            let photoHtml = '';
+            if (evalData.image_urls && evalData.image_urls.length > 0) {
+                photoHtml = `<p class="pt-2 border-t border-red-200 mt-2 font-bold">첨부 사진:</p><div class="flex gap-2 mt-2 overflow-x-auto">`;
+                evalData.image_urls.forEach(url => { photoHtml += `<a href="${url}" target="_blank"><img src="${url}" class="h-20 w-20 object-cover rounded shadow border"></a>`; });
+                photoHtml += `</div>`;
+            }
+
+            document.getElementById('adminDetailContent').innerHTML = `
+                <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-sm space-y-2 mb-4">
+                    <p><strong>구분:</strong> ${evalData.division || '미입력'}</p>
+                    <p><strong>매장명:</strong> ${evalData.store_name}</p>
+                    <p><strong>방문일시:</strong> ${new Date(evalData.visit_time).toLocaleString()} <strong>[${evalData.day_type || '-'}]</strong></p>
+                    <p><strong>매장상황:</strong> 혼잡도(${evalData.crowdedness || '미입력'}) / 근무인원(${evalData.staff_count || '미입력'})</p>
+                    <p><strong>평가자:</strong> ${evalData.emp_name} (${evalData.emp_role || '직무 미입력'}, 사번: ${evalData.emp_id})</p>
+                    <p><strong>평가구분:</strong> ${typeName}</p>
+                    <p><strong>종합점수:</strong> <span class="text-red-700 font-bold text-lg">${evalData.total_score}점</span></p>
+                    <p class="pt-2 border-t border-red-200 mt-2"><strong>평가자 의견:</strong> <br>${evalData.feedback || '없음'}</p>
+                    ${photoHtml}
+                </div>
+                <div id="admin_form_container" class="space-y-6 pt-4"></div>
+            `;
+            const questions = evalData.eval_type === 'form1' ? questionsForm1 : questionsForm2;
+            renderQuestions('admin_form_container', questions, evalData.raw_scores || {});
+        }
+
+        function backToAdminList() {
+            window.scrollTo(0, 0); 
+            document.getElementById('adminDetailContainer').classList.add('hidden');
+            document.getElementById('adminListContainer').classList.remove('hidden');
+            document.getElementById('admin_search_container').classList.remove('hidden');
+        }
+        
+        function closeAdmin() { switchView(); }
+
+        // --- 엑셀 다운로드 (평가자 직무 필드 추가됨) ---
+        function downloadExcel() {
+            if (allDashboardData.length === 0) return alert('다운로드할 데이터가 없습니다.');
+
+            const baseHeaders = ['구분', '매장명', '방문일시', '평일/주말', '혼잡도', '근무인원', '평가자 사번', '평가자 성명', '평가자 직무', '평가 유형', '종합점수'];
+            const endHeaders = ['평가자 의견', '첨부사진 URL'];
+
+            // 1번째 시트
+            const f1Data = allDashboardData.filter(d => d.eval_type === 'form1');
+            const f1Headers = [...baseHeaders, ...questionsForm1.map(q => `[웰컴/상담존] ${q.title}`), ...endHeaders];
+            const f1Rows = [f1Headers];
+            
+            let f1TotalSum = 0, f1TotalCnt = 0;
+            let f1QSums = Array(questionsForm1.length).fill(0), f1QCnts = Array(questionsForm1.length).fill(0);
+
+            f1Data.forEach(d => {
+                const visitTime = new Date(d.visit_time).toLocaleString().replace(/,/g, '');
+                let row = [
+                    d.division || '', d.store_name || '', visitTime, d.day_type || '',
+                    d.crowdedness || '', d.staff_count || '', d.emp_id || '', d.emp_name || '', d.emp_role || '',
+                    '웰컴/상담존', d.total_score || 0
+                ];
+                f1TotalSum += d.total_score || 0; f1TotalCnt++;
+                const rawScores = d.raw_scores || {};
+                questionsForm1.forEach((q, idx) => {
+                    if (rawScores[q.id] === 'NA') { row.push('확인 불가'); } 
+                    else if (rawScores[q.id]) { row.push(rawScores[q.id]); f1QSums[idx] += parseInt(rawScores[q.id]); f1QCnts[idx]++; } 
+                    else { row.push(''); }
+                });
+                row.push(d.feedback || '', d.image_urls ? d.image_urls.join(' | ') : '');
+                f1Rows.push(row);
+            });
+
+            let f1AvgRow = ['[전체 평균]', '-', '-', '-', '-', '-', '-', '-', '-', '-', f1TotalCnt > 0 ? Math.round(f1TotalSum/f1TotalCnt) + '점' : '-'];
+            for(let i=0; i<questionsForm1.length; i++) f1AvgRow.push(f1QCnts[i] > 0 ? Math.round((f1QSums[i]/f1QCnts[i]) * 20) + '점' : '-');
+            f1AvgRow.push('-', '-'); f1Rows.push(f1AvgRow);
+
+            // 2번째 시트
+            const f2Data = allDashboardData.filter(d => d.eval_type === 'form2');
+            const f2Headers = [...baseHeaders, ...questionsForm2.map(q => `[접객/배웅] ${q.title}`), ...endHeaders];
+            const f2Rows = [f2Headers];
+
+            let f2TotalSum = 0, f2TotalCnt = 0;
+            let f2QSums = Array(questionsForm2.length).fill(0), f2QCnts = Array(questionsForm2.length).fill(0);
+
+            f2Data.forEach(d => {
+                const visitTime = new Date(d.visit_time).toLocaleString().replace(/,/g, '');
+                let row = [
+                    d.division || '', d.store_name || '', visitTime, d.day_type || '',
+                    d.crowdedness || '', d.staff_count || '', d.emp_id || '', d.emp_name || '', d.emp_role || '',
+                    '접객/배웅', d.total_score || 0
+                ];
+                f2TotalSum += d.total_score || 0; f2TotalCnt++;
+                const rawScores = d.raw_scores || {};
+                questionsForm2.forEach((q, idx) => {
+                    if (rawScores[q.id] === 'NA') { row.push('확인 불가'); } 
+                    else if (rawScores[q.id]) { row.push(rawScores[q.id]); f2QSums[idx] += parseInt(rawScores[q.id]); f2QCnts[idx]++; } 
+                    else { row.push(''); }
+                });
+                row.push(d.feedback || '', d.image_urls ? d.image_urls.join(' | ') : '');
+                f2Rows.push(row);
+            });
+
+            let f2AvgRow = ['[전체 평균]', '-', '-', '-', '-', '-', '-', '-', '-', '-', f2TotalCnt > 0 ? Math.round(f2TotalSum/f2TotalCnt) + '점' : '-'];
+            for(let i=0; i<questionsForm2.length; i++) f2AvgRow.push(f2QCnts[i] > 0 ? Math.round((f2QSums[i]/f2QCnts[i]) * 20) + '점' : '-');
+            f2AvgRow.push('-', '-'); f2Rows.push(f2AvgRow);
+
+            const wb = XLSX.utils.book_new();
+            const ws1 = XLSX.utils.aoa_to_sheet(f1Rows);
+            const ws2 = XLSX.utils.aoa_to_sheet(f2Rows);
+
+            function applyStyleToLastRow(ws, rows, headers) {
+                const lastRowIdx = rows.length - 1;
+                for(let c=0; c<headers.length; c++) {
+                    let cellRef = XLSX.utils.encode_cell({r: lastRowIdx, c: c});
+                    if(!ws[cellRef]) ws[cellRef] = {t:'s', v:''};
+                    ws[cellRef].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFFF00" } }, alignment: { horizontal: "center", vertical: "center" } };
+                }
+            }
+
+            if(f1Data.length > 0) applyStyleToLastRow(ws1, f1Rows, f1Headers);
+            if(f2Data.length > 0) applyStyleToLastRow(ws2, f2Rows, f2Headers);
+
+            XLSX.utils.book_append_sheet(wb, ws1, "웰컴_상담존");
+            XLSX.utils.book_append_sheet(wb, ws2, "접객_배웅서비스");
+
+            XLSX.writeFile(wb, `매장평가_raw data_${new Date().getTime()}.xlsx`);
+        }
+    </script>
+</body>
+</html>
