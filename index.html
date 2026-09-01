@@ -70,7 +70,6 @@
         <!-- ========================================== -->
         <div id="form_view">
             <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6">
-                <!-- 기본 정보 섹션 -->
                 <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -117,7 +116,6 @@
                         </div>
                     </div>
 
-                    <!-- 평가자 정보 섹션 -->
                     <div class="border-t border-blue-200 pt-4 space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -133,10 +131,7 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 직무</label>
                                 <select id="empRole" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
-                                    <option value="">선택</option>
-                                    <option value="리빙영업">리빙영업</option>
-                                    <option value="집테리어영업">집테리어영업</option>
-                                    <option value="지원">지원</option>
+                                    <option value="">선택</option><option value="리빙영업">리빙영업</option><option value="집테리어영업">집테리어영업</option><option value="지원">지원</option>
                                 </select>
                             </div>
                             <div>
@@ -214,7 +209,7 @@
 
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                 <h3 class="font-bold text-gray-800 mb-4">구분별 평균 점수 요약 (100점 환산)</h3>
-                <div class="h-64"><canvas id="scoreChart"></canvas></div>
+                <div class="h-64 relative w-full"><canvas id="scoreChart"></canvas></div>
             </div>
 
             <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -247,7 +242,7 @@
             </div>
 
             <!-- 3-1. 관리자 대시보드 뷰 -->
-            <div id="admin_dash_container" class="space-y-4">
+            <div id="admin_dash_container" class="space-y-4 hidden">
                 <select id="adminDashMonth" onchange="updateAdminDash()" class="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm">
                     <option value="all">누적 데이터 전체</option>
                 </select>
@@ -255,11 +250,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                         <h3 class="font-bold text-gray-800 text-sm mb-3">사업부별 평균 비교</h3>
-                        <div class="h-40"><canvas id="adminDivChart"></canvas></div>
+                        <div class="h-40 relative w-full"><canvas id="adminDivChart"></canvas></div>
                     </div>
                     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                         <h3 class="font-bold text-gray-800 text-sm mb-3">평가자 직무별 평균 비교</h3>
-                        <div class="h-40"><canvas id="adminRoleChart"></canvas></div>
+                        <div class="h-40 relative w-full"><canvas id="adminRoleChart"></canvas></div>
                     </div>
                 </div>
 
@@ -268,12 +263,12 @@
                         <h3 class="font-bold text-gray-800 text-sm">점포별 평균 순위 <span id="adminStoreTitleSpan" class="text-blue-600">(TOP 5)</span></h3>
                         <button onclick="toggleAdminStores()" id="adminStoreToggleBtn" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold hover:bg-blue-200">전체보기</button>
                     </div>
-                    <div id="adminStoreChartWrapper" class="h-64"><canvas id="adminStoreChart"></canvas></div>
+                    <div id="adminStoreChartWrapper" class="h-64 relative w-full"><canvas id="adminStoreChart"></canvas></div>
                 </div>
 
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                     <h3 class="font-bold text-gray-800 text-sm mb-3">방문 시간대별 평균 점수 흐름</h3>
-                    <div class="h-48"><canvas id="adminTimeChart"></canvas></div>
+                    <div class="h-48 relative w-full"><canvas id="adminTimeChart"></canvas></div>
                 </div>
             </div>
 
@@ -297,6 +292,7 @@
 
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div id="adminSearchCount" class="bg-gray-50 text-xs font-bold text-gray-500 p-2 border-b border-gray-200 text-right">0건 조회됨</div>
+                    <!-- [수정] id="adminList"만 남김 (이전 에러 원인 제거) -->
                     <ul id="adminList" class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto"></ul>
                 </div>
             </div>
@@ -314,6 +310,7 @@
 
     </div>
 
+    <!-- 스크립트 로직 -->
     <script>
         const SUPABASE_URL = 'https://agysoivrjsbbtiqlsxud.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFneXNvaXZyanNiYnRpcWxzeHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3OTA3NzIsImV4cCI6MjEwMzM2Njc3Mn0.pMfOlCkNeF1pbuyTUHBzOgC5FziWOeXeKMTH16vARJw';
@@ -326,7 +323,6 @@
         let editModeId = null; 
         let myEvalsData = [];
 
-        // 관리자용 차트 변수
         let aChartDiv=null, aChartRole=null, aChartStore=null, aChartTime=null;
         let showAllStoresAdmin = false;
 
@@ -685,7 +681,7 @@
             document.getElementById('recentEvalList').innerHTML = targetData.slice(0, 15).map(d => `<div class="flex justify-between items-center bg-gray-50 p-3 rounded border text-sm"><span class="font-bold">[${d.division||'-'}] ${d.store_name} - ${d.emp_name}</span><span class="text-blue-700 font-semibold">${d.total_score}점</span></div>`).join('');
         }
 
-        // ========================== 관리자 페이지 로직 ==========================
+        // ========================== [해결 완료] 관리자 페이지 렌더링 로직 ==========================
         function checkAdminPassword() {
             const pw = prompt('관리자 전용 비밀번호를 입력하세요:');
             if (pw === '3480') openAdminView();
@@ -694,21 +690,31 @@
 
         async function openAdminView() {
             window.scrollTo(0, 0); 
+            
+            // 일반 뷰 숨기기
             document.getElementById('form_view').classList.add('hidden');
             document.getElementById('dashboard_view').classList.add('hidden');
             document.getElementById('edit_search_view').classList.add('hidden');
+            
+            // 관리자 뷰 열기
             document.getElementById('admin_view').classList.remove('hidden');
+            
             document.getElementById('headerTitle').innerText = '관리자 시스템';
             document.getElementById('toggleBtn').innerText = '현황 보기';
             currentView = 'admin';
 
             document.getElementById('adminDetailContainer').classList.add('hidden');
-            
+
+            const listEl = document.getElementById('adminList');
+            listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">데이터를 불러오는 중입니다...</p>';
+
+            // 데이터 로드
             const { data, error } = await supabaseClient.from('evaluations').select('*').order('created_at', { ascending: false });
             if (error) return alert("데이터 로드 실패");
+            
             allDashboardData = data || [];
             
-            // 관리자용 공통 필터(월) 세팅 및 렌더링 오류 방지를 위한 명시적 초기화
+            // 필터 초기화
             const months = [...new Set(allDashboardData.map(d => d.visit_time ? d.visit_time.substring(0, 7) : ''))].filter(Boolean).sort().reverse();
             const dashMonth = document.getElementById('adminDashMonth');
             const searchMonth = document.getElementById('adminSearchMonth');
@@ -717,7 +723,12 @@
             dashMonth.value = 'all';
             searchMonth.value = 'all';
 
-            switchAdminTab('dash'); 
+            if (allDashboardData.length === 0) {
+                listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">제출된 평가가 없습니다.</p>';
+            }
+
+            // [에러 해결] 탭을 바꾸고 차트를 그릴 때, 브라우저가 공간을 확보할 수 있도록 딱 0.1초의 여유를 줍니다.
+            switchAdminTab('dash');
         }
 
         function switchAdminTab(tab) {
@@ -725,45 +736,41 @@
             const btnSearch = document.getElementById('adminTabSearch');
             const viewDash = document.getElementById('admin_dash_container');
             const viewSearch = document.getElementById('admin_search_container');
-            const listCont = document.getElementById('adminListContainer');
             
             if(tab === 'dash') {
                 btnDash.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
                 btnSearch.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
-                viewDash.classList.remove('hidden');
                 viewSearch.classList.add('hidden');
-                listCont.classList.add('hidden');
+                viewDash.classList.remove('hidden');
                 
-                // [오류 수정] 브라우저가 화면을 열 시간을 약간(0.05초) 준 뒤 차트를 그림
-                setTimeout(() => { updateAdminDash(); }, 50);
+                // 화면이 펴진 후 안전하게 그리도록 setTimeout 설정
+                setTimeout(() => { updateAdminDash(); }, 100);
             } else {
                 btnDash.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
                 btnSearch.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
                 viewDash.classList.add('hidden');
                 viewSearch.classList.remove('hidden');
-                listCont.classList.remove('hidden');
                 
-                setTimeout(() => { updateAdminSearchList(); }, 50);
+                updateAdminSearchList();
             }
         }
 
-        // --- 관리자 대시보드 (차트 생성) ---
         function updateAdminDash() {
-            const filterMonth = document.getElementById('adminDashMonth').value;
+            const filterMonth = document.getElementById('adminDashMonth').value || 'all';
             const targetData = allDashboardData.filter(d => filterMonth === 'all' || (d.visit_time && d.visit_time.startsWith(filterMonth)));
 
             const getGroupAvg = (data, keyFn) => {
                 const grp = {};
                 data.forEach(d => {
                     const k = keyFn(d);
-                    if(!k) return;
+                    if(k === null || k === undefined || k === '') return;
                     if(!grp[k]) grp[k] = {sum:0, cnt:0};
                     grp[k].sum += d.total_score; grp[k].cnt++;
                 });
                 return Object.keys(grp).map(k => ({ label: k, avg: Math.round(grp[k].sum / grp[k].cnt) }));
             };
 
-            // 1. 사업부별 비교
+            // 차트 1: 사업부별
             const divData = getGroupAvg(targetData, d => d.division);
             if(aChartDiv) aChartDiv.destroy();
             aChartDiv = new Chart(document.getElementById('adminDivChart').getContext('2d'), {
@@ -771,7 +778,7 @@
                 options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
             });
 
-            // 2. 직무별 비교
+            // 차트 2: 직무별
             const roleData = getGroupAvg(targetData, d => d.emp_role || '미입력');
             if(aChartRole) aChartRole.destroy();
             aChartRole = new Chart(document.getElementById('adminRoleChart').getContext('2d'), {
@@ -779,7 +786,7 @@
                 options: { maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100}} }
             });
 
-            // 3. 점포별 평균
+            // 차트 3: 점포별
             let storeData = getGroupAvg(targetData, d => d.store_name).sort((a,b) => b.avg - a.avg);
             if(!showAllStoresAdmin) storeData = storeData.slice(0, 5);
             
@@ -793,13 +800,14 @@
                 options: { indexAxis: 'y', maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, max:100}} }
             });
 
-            // 4. 시간대별 비교
+            // 차트 4: 시간대별
             const timeDataRaw = getGroupAvg(targetData, d => {
                 if(!d.visit_time) return null;
                 const h = new Date(d.visit_time).getHours();
-                return isNaN(h) ? null : h; 
+                return isNaN(h) ? null : h.toString();
             });
             const timeData = timeDataRaw.sort((a,b) => parseInt(a.label) - parseInt(b.label)).map(x => ({label: x.label + "시", avg: x.avg}));
+            
             if(aChartTime) aChartTime.destroy();
             aChartTime = new Chart(document.getElementById('adminTimeChart').getContext('2d'), {
                 type: 'line', data: { labels: timeData.map(x=>x.label), datasets: [{ label: '시간대별 평균', data: timeData.map(x=>x.avg), borderColor: '#8b5cf6', backgroundColor: '#bfdbfe', fill:true, tension:0.4 }] },
@@ -812,7 +820,6 @@
             updateAdminDash();
         }
 
-        // --- 관리자 평가지 조회 (검색) ---
         function updateAdminSearchList() {
             const mon = document.getElementById('adminSearchMonth').value;
             const div = document.getElementById('adminSearchDiv').value;
@@ -848,14 +855,13 @@
             `).join('');
         }
 
-        // --- 관리자 상세 내역 ---
         function showAdminDetail(id) {
             window.scrollTo(0, 0); 
             const evalData = allDashboardData.find(d => d.id === id);
             if(!evalData) return;
 
-            document.getElementById('adminListContainer').classList.add('hidden');
             document.getElementById('admin_search_container').classList.add('hidden');
+            document.getElementById('admin_dash_container').classList.add('hidden'); // 만약을 위해 대시보드도 숨김
             document.getElementById('adminDetailContainer').classList.remove('hidden');
 
             const typeName = evalData.eval_type === 'form1' ? '웰컴존·상담존 모니터링' : '판매사원 접객·배웅 서비스 모니터링';
@@ -888,13 +894,12 @@
         function backToAdminList() {
             window.scrollTo(0, 0); 
             document.getElementById('adminDetailContainer').classList.add('hidden');
-            document.getElementById('adminListContainer').classList.remove('hidden');
             document.getElementById('admin_search_container').classList.remove('hidden');
+            switchAdminTab('search'); 
         }
         
         function closeAdmin() { switchView(); }
 
-        // --- 엑셀 다운로드 ---
         function downloadExcel() {
             if (allDashboardData.length === 0) return alert('다운로드할 데이터가 없습니다.');
 
