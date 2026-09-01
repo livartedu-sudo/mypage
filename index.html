@@ -71,6 +71,7 @@
         <!-- ========================================== -->
         <div id="form_view">
             <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6">
+                <!-- 기본 정보 섹션 -->
                 <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -236,6 +237,7 @@
                 </div>
             </div>
 
+            <!-- 관리자 탭 버튼 -->
             <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
                 <button id="adminTabDash" onclick="switchAdminTab('dash')" class="flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors">대시보드</button>
                 <button id="adminTabSearch" onclick="switchAdminTab('search')" class="flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors">평가지 조회</button>
@@ -258,6 +260,7 @@
                     </div>
                 </div>
 
+                <!-- 매장별 평균순위 2단 리스트 -->
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                     <div class="flex justify-between items-center mb-3 border-b border-gray-200 pb-2">
                         <h3 class="font-bold text-gray-800 text-sm">매장별 평균순위 <span id="adminStoreTitleSpan" class="text-blue-600">(상위 & 하위 5개 매장)</span></h3>
@@ -566,29 +569,29 @@
 
         // ========================== 질문 데이터 ==========================
         const questionsForm1 = [
-            { id: "f1_q1", cat: "웰컴존", title: "운영 여부", desc: "웰컴존 근처에서 대기하며 실제로 고객과의 응대가 잘 이루어지고 있는가?" },
-            { id: "f1_q2", cat: "웰컴존", title: "적절한 위치", desc: "웰컴존의 위치는 고객 동선을 고려했을 때 적절하다고 생각이 되는가?" },
-            { id: "f1_q3", cat: "웰컴존", title: "순환근무", desc: "웰컴존을 중심으로 우선순위에 맞게 순환 근무가 잘 이루어지고 있는가?" },
-            { id: "f1_q4", cat: "웰컴존", title: "업무 중 대응", desc: "매장관리(청소, 정리정돈) 등 기타 업무 중에도 고객 응대가 잘 이루어지고 있는가?" },
-            { id: "f1_q5", cat: "상담존", title: "적절한 위치", desc: "상담존의 위치는 기존 고객 상담 중 신규 고객을 발견할 수 있는 적절한 위치라고 생각이 되는가?" },
-            { id: "f1_q6", cat: "상담존", title: "상담 중 신규고객 대응", desc: "기존 고객 상담 중 인입되는 신규 고객에 대해 적절하게 응대하고 있는가?<br>① 단순 응대시: 신규 고객에게 맞이 인사 및 편하게 둘러볼 것을 권유<br>② 집중 상담시: 기존 고객이 불쾌하지 않을 수준으로 눈맞춤 등 가벼운 인사" },
-            { id: "f1_q7", cat: "상황별 운영", title: "1인 근무 대응", desc: "1인 근무 시 상황에 맞게 신규고객과 기존 고객의 응대가 잘 이루어지는가?" },
-            { id: "f1_q8", cat: "상황별 운영", title: "복수 인원 근무 대응", desc: "신규 상담 발생시 웰컴존 우선순위에 맞게 적절하게 순환근무가 이루어지는가?" },
-            { id: "f1_q9", cat: "상황별 운영", title: "PeakTime 대응 - 매장 혼잡 시", desc: "매장 내에 유입되는 신규고객에게 공통 인사는 적절하게 이루어지는가?" },
-            { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응 - 전원 상담 시", desc: "상담 중 신규 고객 유입 시 상황에 맞는 적절한 응대와 대기 양해 안내가 이루어지는가?" }
+            { id: "f1_q1", cat: "웰컴존", title: "운영 여부", desc: "웰컴존 근처에서 대기하며 실제로 고객과의 응대가 잘 이루어지고 있는가?", naText: "직원 없음" },
+            { id: "f1_q2", cat: "웰컴존", title: "적절한 위치", desc: "웰컴존의 위치는 고객 동선을 고려했을 때 적절하다고 생각이 되는가?", hideNa: true },
+            { id: "f1_q3", cat: "웰컴존", title: "순환근무", desc: "웰컴존을 중심으로 우선순위에 맞게 순환 근무가 잘 이루어지고 있는가?", naText: "직원 없음" },
+            { id: "f1_q4", cat: "웰컴존", title: "업무 중 대응", desc: "매장관리(청소, 정리정돈) 등 기타 업무 중에도 고객 응대가 잘 이루어지고 있는가?", naText: "직원 없음" },
+            { id: "f1_q5", cat: "상담존", title: "적절한 위치", desc: "상담존의 위치는 기존 고객 상담 중 신규 고객을 발견할 수 있는 적절한 위치라고 생각이 되는가?", hideNa: true },
+            { id: "f1_q6", cat: "상담존", title: "상담 중 신규고객 대응", desc: "기존 고객 상담 중 인입되는 신규 고객에 대해 적절하게 응대하고 있는가?<br>① 단순 응대시: 신규 고객에게 맞이 인사 및 편하게 둘러볼 것을 권유<br>② 집중 상담시: 기존 고객이 불쾌하지 않을 수준으로 눈맞춤 등 가벼운 인사", naText: "직원 없음" },
+            { id: "f1_q7", cat: "상황별 운영", title: "1인 근무 대응", desc: "1인 근무 시 상황에 맞게 신규고객과 기존 고객의 응대가 잘 이루어지는가?", naText: "복수 인원 근무" },
+            { id: "f1_q8", cat: "상황별 운영", title: "복수 인원 근무 대응", desc: "신규 상담 발생시 웰컴존 우선순위에 맞게 적절하게 순환근무가 이루어지는가?", naText: "1인 근무" },
+            { id: "f1_q9", cat: "상황별 운영", title: "PeakTime 대응 - 매장 혼잡 시", desc: "매장 내에 유입되는 신규고객에게 공통 인사는 적절하게 이루어지는가?", naText: "PeakTime 외 시간" },
+            { id: "f1_q10", cat: "상황별 운영", title: "PeakTime 대응 - 전원 상담 시", desc: "상담 중 신규 고객 유입 시 상황에 맞는 적절한 응대와 대기 양해 안내가 이루어지는가?", naText: "PeakTime 외 시간" }
         ];
 
         const questionsForm2 = [
-            { id: "f2_q1", cat: "입점인사", title: "집중 상담시", desc: "상담 중 신규 고객 입점 시 가벼운 눈맞춤과 미소로 반응하는가?" },
-            { id: "f2_q2", cat: "입점인사", title: "대기중 또는 단순 응대시", desc: "입점하는 고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?" },
-            { id: "f2_q3", cat: "응대방식", title: "자율 탐색 배려", desc: "고객이 편안하게 매장을 둘러볼 수 있도록 적정 거리를 유지하는가?" },
-            { id: "f2_q4", cat: "응대방식", title: "고객 니즈 대응", desc: "고객이 특정 제품에 관심을 보이거나 도움을 필요로 할 때 적절하게 응대하는가?" },
-            { id: "f2_q5", cat: "상담 중 대응", title: "신규고객 대응", desc: "상담 중 발생하는 신규고객에 대해 방치하는 느낌 없이 적절하게 응대하는가?" },
-            { id: "f2_q6", cat: "상담 중 대응", title: "대기고객 안내", desc: "상담 대기 발생 시 고객에게 현재 상황에 대해 양해를 구하거나 예상 대기시간을 안내하는가?" },
-            { id: "f2_q7", cat: "배웅", title: "응대 고객", desc: "고객 퇴점 시 감사 인사와 함께 적절한 배웅이 이루어지는가?" },
-            { id: "f2_q8", cat: "배웅", title: "단순 방문 고객", desc: "구매 고객 도는 응대 고객뿐만 아니라 단순 방문한 고객까지 일관되게 배웅하는가?" },
-            { id: "f2_q9", cat: "용모/태도", title: "용모 및 복장", desc: "깔끔한 용모와 판매자로서 적합한 복장을 갖추었는가?" },
-            { id: "f2_q10", cat: "용모/태도", title: "표정과 목소리", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?" }
+            { id: "f2_q1", cat: "입점인사", title: "집중 상담시", desc: "상담 중 신규 고객 입점 시 가벼운 눈맞춤과 미소로 반응하는가?", naText: "직원 없음" },
+            { id: "f2_q2", cat: "입점인사", title: "대기중 또는 단순 응대시", desc: "입점하는 고객에게 밝고 호감가는 표정과 목소리로 인사를 하였는가?", naText: "직원 없음" },
+            { id: "f2_q3", cat: "응대방식", title: "자율 탐색 배려", desc: "고객이 편안하게 매장을 둘러볼 수 있도록 적정 거리를 유지하는가?", naText: "직원 없음" },
+            { id: "f2_q4", cat: "응대방식", title: "고객 니즈 대응", desc: "고객이 특정 제품에 관심을 보이거나 도움을 필요로 할 때 적절하게 응대하는가?", naText: "직원 없음" },
+            { id: "f2_q5", cat: "상담 중 대응", title: "신규고객 대응", desc: "상담 중 발생하는 신규고객에 대해 방치하는 느낌 없이 적절하게 응대하는가?", naText: "직원 없음" },
+            { id: "f2_q6", cat: "상담 중 대응", title: "대기고객 안내", desc: "상담 대기 발생 시 고객에게 현재 상황에 대해 양해를 구하거나 예상 대기시간을 안내하는가?", naText: "직원 없음" },
+            { id: "f2_q7", cat: "배웅", title: "응대 고객", desc: "고객 퇴점 시 감사 인사와 함께 적절한 배웅이 이루어지는가?", naText: "직원 없음" },
+            { id: "f2_q8", cat: "배웅", title: "단순 방문 고객", desc: "구매 고객 또는 응대 고객뿐만 아니라 단순 방문한 고객까지 일관되게 배웅하는가?", naText: "직원 없음" },
+            { id: "f2_q9", cat: "용모/태도", title: "용모 및 복장", desc: "깔끔한 용모와 판매자로서 적합한 복장을 갖추었는가?", naText: "직원 없음" },
+            { id: "f2_q10", cat: "용모/태도", title: "표정과 목소리", desc: "밝은 표정과 기분 좋은 목소리톤으로 응대하는가?", naText: "직원 없음" }
         ];
 
         function renderQuestions(containerId, questions, savedAnswers = null) {
@@ -604,7 +607,12 @@
                 [1,2,3,4,5].forEach(score => {
                     html += `<label class="flex-1 text-center ${isReadOnly ? '' : 'cursor-pointer'}"><input type="radio" name="${isReadOnly ? 'admin_'+q.id : q.id}" value="${score}" class="peer sr-only" ${isReadOnly ? 'disabled' : ''} ${ans === String(score) ? 'checked' : ''}><div class="py-2 border border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:text-white ${isReadOnly ? '' : 'hover:bg-gray-50'} font-medium transition-colors">${score}</div></label>`;
                 });
-                html += `<label class="flex-1 text-center ${isReadOnly ? '' : 'cursor-pointer'}"><input type="radio" name="${isReadOnly ? 'admin_'+q.id : q.id}" value="NA" class="peer sr-only" ${isReadOnly ? 'disabled' : ''} ${ans === 'NA' ? 'checked' : ''}><div class="py-2 border border-gray-300 rounded peer-checked:bg-gray-500 peer-checked:text-white text-xs font-medium flex items-center justify-center transition-colors break-keep">확인 불가</div></label></div></div>`;
+                
+                if (!q.hideNa) {
+                    const labelTxt = q.naText || '직원 없음';
+                    html += `<label class="flex-1 text-center ${isReadOnly ? '' : 'cursor-pointer'}"><input type="radio" name="${isReadOnly ? 'admin_'+q.id : q.id}" value="NA" class="peer sr-only" ${isReadOnly ? 'disabled' : ''} ${ans === 'NA' ? 'checked' : ''}><div class="py-2 border border-gray-300 rounded peer-checked:bg-gray-500 peer-checked:text-white text-[10px] sm:text-xs font-medium flex items-center justify-center transition-colors break-keep leading-tight px-0.5">${labelTxt}</div></label>`;
+                }
+                html += `</div></div>`;
             });
             container.innerHTML = html;
         }
@@ -655,8 +663,6 @@
             document.getElementById('totalAvg').innerText = `${overallAvg}점`;
 
             const questions = currentDashboardTab === 'form1' ? questionsForm1 : questionsForm2;
-            
-            // 동적 카테고리 추출 (에러 원천 방지)
             const categories = [...new Set(questions.map(q => q.cat))];
                 
             const itemAgg = {};
@@ -711,7 +717,6 @@
             document.getElementById('recentEvalList').innerHTML = targetData.slice(0, 15).map(d => `<div class="flex justify-between items-center bg-gray-50 p-3 rounded border text-sm"><span class="font-bold">[${d.division||'-'}] ${d.store_name} - ${d.emp_name}</span><span class="text-blue-700 font-semibold">${d.total_score}점</span></div>`).join('');
         }
 
-
         // ========================== 관리자 전용 페이지 로직 ==========================
         function checkAdminPassword() {
             const pw = prompt('관리자 전용 비밀번호를 입력하세요:');
@@ -725,6 +730,7 @@
             document.getElementById('form_view').classList.add('hidden');
             document.getElementById('dashboard_view').classList.add('hidden');
             document.getElementById('edit_search_view').classList.add('hidden');
+            
             document.getElementById('admin_view').classList.remove('hidden');
             
             document.getElementById('headerTitle').innerText = '관리자 시스템';
@@ -732,7 +738,11 @@
             currentView = 'admin';
 
             document.getElementById('adminDetailContainer').classList.add('hidden');
-            // 여기서 더 이상 존재하지 않는 adminListContainer를 호출하는 유령 코드를 삭제 완료했습니다.
+
+            const listEl = document.getElementById('adminList');
+            if(listEl) {
+                listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">데이터를 불러오는 중입니다...</p>';
+            }
 
             const { data, error } = await supabaseClient.from('evaluations').select('*').order('created_at', { ascending: false });
             if (error) return alert("데이터 로드 실패");
@@ -743,10 +753,18 @@
             const dashMonth = document.getElementById('adminDashMonth');
             const searchMonth = document.getElementById('adminSearchMonth');
             
-            dashMonth.innerHTML = '<option value="all">누적 데이터 전체</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
-            searchMonth.innerHTML = '<option value="all">전체 월</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
-            dashMonth.value = 'all';
-            searchMonth.value = 'all';
+            if(dashMonth) {
+                dashMonth.innerHTML = '<option value="all">누적 데이터 전체</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+                dashMonth.value = 'all';
+            }
+            if(searchMonth) {
+                searchMonth.innerHTML = '<option value="all">전체 월</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+                searchMonth.value = 'all';
+            }
+
+            if (allDashboardData.length === 0 && listEl) {
+                listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">제출된 평가가 없습니다.</p>';
+            }
 
             switchAdminTab('dash');
         }
@@ -756,28 +774,35 @@
             const btnSearch = document.getElementById('adminTabSearch');
             const viewDash = document.getElementById('admin_dash_container');
             const viewSearch = document.getElementById('admin_search_container');
+            const viewDetail = document.getElementById('adminDetailContainer');
             
+            if (viewDetail) viewDetail.classList.add('hidden');
+
             if(tab === 'dash') {
-                btnDash.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
-                btnSearch.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
-                viewSearch.classList.add('hidden');
-                viewDash.classList.remove('hidden');
-                
-                void viewDash.offsetWidth; 
-                setTimeout(() => { updateAdminDash(); }, 50); 
+                if(btnDash) btnDash.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                if(btnSearch) btnSearch.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                if(viewSearch) viewSearch.classList.add('hidden');
+                if(viewDash) {
+                    viewDash.classList.remove('hidden');
+                    void viewDash.offsetWidth; 
+                    setTimeout(() => { updateAdminDash(); }, 100); 
+                }
             } else {
-                btnDash.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
-                btnSearch.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
-                viewDash.classList.add('hidden');
-                viewSearch.classList.remove('hidden');
-                
-                void viewSearch.offsetWidth;
-                updateAdminSearchList();
+                if(btnDash) btnDash.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
+                if(btnSearch) btnSearch.className = "flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors";
+                if(viewDash) viewDash.classList.add('hidden');
+                if(viewSearch) {
+                    viewSearch.classList.remove('hidden');
+                    void viewSearch.offsetWidth;
+                    updateAdminSearchList();
+                }
             }
         }
 
         function updateAdminDash() {
-            const filterMonth = document.getElementById('adminDashMonth').value || 'all';
+            const dashMonthEl = document.getElementById('adminDashMonth');
+            if(!dashMonthEl) return;
+            const filterMonth = dashMonthEl.value || 'all';
             const targetData = allDashboardData.filter(d => filterMonth === 'all' || (d.visit_time && d.visit_time.startsWith(filterMonth)));
 
             const getGroupAvg = (data, keyFn) => {
@@ -791,7 +816,6 @@
                 return Object.keys(grp).map(k => ({ label: k, avg: Math.round(grp[k].sum / grp[k].cnt) }));
             };
 
-            // 차트 1: 사업부별 (Y축 최대값 100점 복구, 윗여백 추가)
             const divData = getGroupAvg(targetData, d => d.division);
             const canvasDiv = document.getElementById('adminDivChart');
             if (aChartDiv) aChartDiv.destroy();
@@ -811,7 +835,6 @@
                 });
             }
 
-            // 차트 2: 직무별 (Y축 최대값 100점 복구, 윗여백 추가)
             const roleData = getGroupAvg(targetData, d => d.emp_role || '미입력');
             const canvasRole = document.getElementById('adminRoleChart');
             if (aChartRole) aChartRole.destroy();
@@ -831,7 +854,6 @@
                 });
             }
 
-            // 차트 3: 점포별 순위 리스트 (사용자 요청 텍스트 반영)
             let storeData = getGroupAvg(targetData, d => d.store_name).sort((a,b) => b.avg - a.avg);
             
             const titleSpan = document.getElementById('adminStoreTitleSpan');
@@ -870,7 +892,15 @@
                 } else {
                     let top5 = storeData.slice(0, 5);
                     let bottomStartIndex = Math.max(5, storeData.length - 5);
-                    let bottom5 = storeData.length > 5 ? storeData.slice(bottomStartIndex) : [];
+                    
+                    // 하위 5개 추출 후 점수 낮은 순(역순)으로 정렬 (에러 수정 완료)
+                    let bottom5WithRank = [];
+                    if (storeData.length > 5) {
+                        for (let i = bottomStartIndex; i < storeData.length; i++) {
+                            bottom5WithRank.push({ item: storeData[i], rank: i + 1 });
+                        }
+                        bottom5WithRank.reverse(); 
+                    }
 
                     storeHtml += '<div class="grid grid-cols-2 gap-4">';
                     
@@ -879,8 +909,8 @@
                     storeHtml += '</div>';
 
                     storeHtml += '<div class="flex flex-col"><div class="text-xs font-bold text-gray-500 mb-2 border-b border-gray-200 pb-1 px-1">🚨 하위 5개 매장</div>';
-                    if (bottom5.length > 0) {
-                        bottom5.forEach((item, index) => { storeHtml += buildRow(item, bottomStartIndex + index + 1); });
+                    if (bottom5WithRank.length > 0) {
+                        bottom5WithRank.forEach((data) => { storeHtml += buildRow(data.item, data.rank); });
                     } else {
                         storeHtml += '<div class="flex h-full items-center justify-center"><p class="text-xs text-gray-400 py-2">등록 매장 5개 이하</p></div>';
                     }
@@ -889,7 +919,6 @@
             }
             if (listContainer) listContainer.innerHTML = storeHtml;
 
-            // 차트 4: 시간대별 흐름
             const timeDataRaw = getGroupAvg(targetData, d => {
                 if(!d.visit_time) return null;
                 const h = new Date(d.visit_time).getHours();
@@ -931,11 +960,11 @@
         }
 
         function updateAdminSearchList() {
-            const mon = document.getElementById('adminSearchMonth').value;
-            const div = document.getElementById('adminSearchDiv').value;
-            const store = document.getElementById('adminSearchStore').value;
-            const day = document.getElementById('adminSearchDay').value;
-            const text = document.getElementById('adminSearchText').value.trim();
+            const mon = document.getElementById('adminSearchMonth') ? document.getElementById('adminSearchMonth').value : 'all';
+            const div = document.getElementById('adminSearchDiv') ? document.getElementById('adminSearchDiv').value : 'all';
+            const store = document.getElementById('adminSearchStore') ? document.getElementById('adminSearchStore').value : 'all';
+            const day = document.getElementById('adminSearchDay') ? document.getElementById('adminSearchDay').value : 'all';
+            const text = document.getElementById('adminSearchText') ? document.getElementById('adminSearchText').value.trim() : '';
 
             const filtered = allDashboardData.filter(d => {
                 if(mon !== 'all' && (!d.visit_time || !d.visit_time.startsWith(mon))) return false;
@@ -946,8 +975,12 @@
                 return true;
             });
 
-            document.getElementById('adminSearchCount').innerText = `${filtered.length}건 조회됨`;
+            const countEl = document.getElementById('adminSearchCount');
+            if(countEl) countEl.innerText = `${filtered.length}건 조회됨`;
+            
             const listEl = document.getElementById('adminList');
+            if(!listEl) return;
+
             if(filtered.length === 0) {
                 listEl.innerHTML = '<p class="p-4 text-center text-sm text-gray-500">조건에 맞는 데이터가 없습니다.</p>';
                 return;
@@ -970,9 +1003,13 @@
             const evalData = allDashboardData.find(d => d.id === id);
             if(!evalData) return;
 
-            document.getElementById('admin_search_container').classList.add('hidden');
-            document.getElementById('admin_dash_container').classList.add('hidden'); 
-            document.getElementById('adminDetailContainer').classList.remove('hidden');
+            const searchCont = document.getElementById('admin_search_container');
+            const dashCont = document.getElementById('admin_dash_container');
+            const detailCont = document.getElementById('adminDetailContainer');
+            
+            if(searchCont) searchCont.classList.add('hidden');
+            if(dashCont) dashCont.classList.add('hidden'); 
+            if(detailCont) detailCont.classList.remove('hidden');
 
             const typeName = evalData.eval_type === 'form1' ? '웰컴존·상담존 모니터링' : '판매사원 접객·배웅 서비스 모니터링';
             
@@ -983,28 +1020,33 @@
                 photoHtml += `</div>`;
             }
 
-            document.getElementById('adminDetailContent').innerHTML = `
-                <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-sm space-y-2 mb-4">
-                    <p><strong>구분:</strong> ${evalData.division || '미입력'}</p>
-                    <p><strong>매장명:</strong> ${evalData.store_name}</p>
-                    <p><strong>방문일시:</strong> ${new Date(evalData.visit_time).toLocaleString()} <strong>[${evalData.day_type || '-'}]</strong></p>
-                    <p><strong>매장상황:</strong> 혼잡도(${evalData.crowdedness || '미입력'}) / 근무인원(${evalData.staff_count || '미입력'})</p>
-                    <p><strong>평가자:</strong> ${evalData.emp_name} (${evalData.emp_role || '직무 미입력'}, 사번: ${evalData.emp_id})</p>
-                    <p><strong>평가구분:</strong> ${typeName}</p>
-                    <p><strong>종합점수:</strong> <span class="text-red-700 font-bold text-lg">${evalData.total_score}점</span></p>
-                    <p class="pt-2 border-t border-red-200 mt-2"><strong>평가자 의견:</strong> <br>${evalData.feedback || '없음'}</p>
-                    ${photoHtml}
-                </div>
-                <div id="admin_form_container" class="space-y-6 pt-4"></div>
-            `;
+            const detailContent = document.getElementById('adminDetailContent');
+            if(detailContent) {
+                detailContent.innerHTML = `
+                    <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-sm space-y-2 mb-4">
+                        <p><strong>구분:</strong> ${evalData.division || '미입력'}</p>
+                        <p><strong>매장명:</strong> ${evalData.store_name}</p>
+                        <p><strong>방문일시:</strong> ${new Date(evalData.visit_time).toLocaleString()} <strong>[${evalData.day_type || '-'}]</strong></p>
+                        <p><strong>매장상황:</strong> 혼잡도(${evalData.crowdedness || '미입력'}) / 근무인원(${evalData.staff_count || '미입력'})</p>
+                        <p><strong>평가자:</strong> ${evalData.emp_name} (${evalData.emp_role || '직무 미입력'}, 사번: ${evalData.emp_id})</p>
+                        <p><strong>평가구분:</strong> ${typeName}</p>
+                        <p><strong>종합점수:</strong> <span class="text-red-700 font-bold text-lg">${evalData.total_score}점</span></p>
+                        <p class="pt-2 border-t border-red-200 mt-2"><strong>평가자 의견:</strong> <br>${evalData.feedback || '없음'}</p>
+                        ${photoHtml}
+                    </div>
+                    <div id="admin_form_container" class="space-y-6 pt-4"></div>
+                `;
+            }
             const questions = evalData.eval_type === 'form1' ? questionsForm1 : questionsForm2;
             renderQuestions('admin_form_container', questions, evalData.raw_scores || {});
         }
 
         function backToAdminList() {
             window.scrollTo(0, 0); 
-            document.getElementById('adminDetailContainer').classList.add('hidden');
-            document.getElementById('admin_search_container').classList.remove('hidden');
+            const detailCont = document.getElementById('adminDetailContainer');
+            const searchCont = document.getElementById('admin_search_container');
+            if(detailCont) detailCont.classList.add('hidden');
+            if(searchCont) searchCont.classList.remove('hidden');
             switchAdminTab('search'); 
         }
         
@@ -1034,7 +1076,7 @@
                 f1TotalSum += d.total_score || 0; f1TotalCnt++;
                 const rawScores = d.raw_scores || {};
                 questionsForm1.forEach((q, idx) => {
-                    if (rawScores[q.id] === 'NA') { row.push('확인 불가'); } 
+                    if (rawScores[q.id] === 'NA') { row.push(q.naText || '직원 없음'); } 
                     else if (rawScores[q.id]) { row.push(rawScores[q.id]); f1QSums[idx] += parseInt(rawScores[q.id]); f1QCnts[idx]++; } 
                     else { row.push(''); }
                 });
@@ -1064,7 +1106,7 @@
                 f2TotalSum += d.total_score || 0; f2TotalCnt++;
                 const rawScores = d.raw_scores || {};
                 questionsForm2.forEach((q, idx) => {
-                    if (rawScores[q.id] === 'NA') { row.push('확인 불가'); } 
+                    if (rawScores[q.id] === 'NA') { row.push(q.naText || '직원 없음'); } 
                     else if (rawScores[q.id]) { row.push(rawScores[q.id]); f2QSums[idx] += parseInt(rawScores[q.id]); f2QCnts[idx]++; } 
                     else { row.push(''); }
                 });
