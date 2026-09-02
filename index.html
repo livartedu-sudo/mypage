@@ -41,29 +41,19 @@
         </div>
     </div>
 
-    <!-- [수정완료] 매장 도면 PDF 뷰어 모달 (페이지 내 팝업) -->
-    <div id="pdf_modal" class="fixed inset-0 bg-black bg-opacity-80 flex flex-col z-[60] hidden">
-        <div class="flex justify-between items-center p-3 bg-gray-900 text-white shadow-lg">
-            <h3 class="font-bold text-sm sm:text-base">🗺️ 매장정보 및 도면</h3>
-            <div class="flex gap-2">
-                <a href="#" id="pdfNewTabLink" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded text-xs sm:text-sm font-bold flex items-center transition-colors">새 창으로 열기</a>
-                <button onclick="closePdfModal()" class="bg-gray-600 hover:bg-red-600 px-3 py-1.5 rounded text-xs sm:text-sm font-bold transition-colors">닫기 ✕</button>
-            </div>
-        </div>
-        <div class="flex-1 w-full bg-white relative">
-            <iframe id="pdfViewer" src="" class="w-full h-full border-none absolute inset-0"></iframe>
-        </div>
-    </div>
-
     <!-- 앱 전체 래퍼 -->
     <div id="app_container" class="hidden max-w-xl mx-auto bg-white min-h-screen shadow-md relative">
         
         <!-- 상단 헤더 -->
         <header class="bg-blue-700 text-white p-3 flex justify-between items-center sticky top-0 z-10 shadow-sm">
-            <h1 class="font-bold text-base" id="headerTitle">접객서비스 모니터링</h1>
-            <div class="flex gap-1.5">
-                <button onclick="openEditMyEval()" class="bg-green-600 hover:bg-green-700 text-white text-xs py-1.5 px-2.5 rounded shadow font-bold">내 평가 수정</button>
-                <button id="toggleBtn" onclick="switchView()" class="bg-blue-900 hover:bg-blue-800 text-white text-xs py-1.5 px-2.5 rounded shadow font-bold">현황 보기</button>
+            <h1 class="font-bold text-base whitespace-nowrap" id="headerTitle">접객 모니터링</h1>
+            <div class="flex gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar">
+                <a href="https://agysoivrjsbbtiqlsxud.supabase.co/storage/v1/object/public/Photo/info..pdf" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] sm:text-xs py-1.5 px-2 rounded shadow font-bold whitespace-nowrap flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+                    도면 보기
+                </a>
+                <button onclick="openEditMyEval()" class="bg-green-600 hover:bg-green-700 text-white text-[11px] sm:text-xs py-1.5 px-2 rounded shadow font-bold whitespace-nowrap">평가 수정</button>
+                <button id="toggleBtn" onclick="switchView()" class="bg-blue-900 hover:bg-blue-800 text-white text-[11px] sm:text-xs py-1.5 px-2 rounded shadow font-bold whitespace-nowrap">현황 보기</button>
             </div>
         </header>
 
@@ -149,7 +139,7 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">평가자 직무</label>
                                 <select id="empRole" class="h-11 px-3 bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-800" required>
-                                    <option value="">선택</option><option value="리빙영업">리빙영업</option><option value="집테리어영업">집테리어영업</option><option value="지원">지원</option>
+                                    <option value="">선택</option><option value="리빙영업">리빙영업</option><option value="집테리어영업">집테리어영업</option><option value="지원부서">지원부서</option>
                                 </select>
                             </div>
                             <div>
@@ -253,6 +243,7 @@
                 </div>
             </div>
 
+            <!-- 관리자 탭 버튼 -->
             <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
                 <button id="adminTabDash" onclick="switchAdminTab('dash')" class="flex-1 py-2 text-sm font-bold rounded shadow-sm bg-white text-blue-700 transition-colors">대시보드</button>
                 <button id="adminTabSearch" onclick="switchAdminTab('search')" class="flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors">평가지 조회</button>
@@ -260,7 +251,6 @@
 
             <!-- 3-1. 관리자 대시보드 영역 -->
             <div id="admin_dash_container" class="space-y-4 hidden">
-                
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <select id="adminDashMonth" onchange="updateAdminDash()" class="h-11 px-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                         <option value="all">누적 전체 (월별)</option>
@@ -283,6 +273,7 @@
                     </div>
                 </div>
 
+                <!-- 매장별 평균순위 2단 리스트 -->
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                     <div class="flex justify-between items-center mb-3 border-b border-gray-200 pb-2">
                         <h3 class="font-bold text-gray-800 text-sm">매장별 평균순위 <span id="adminStoreTitleSpan" class="text-blue-600">(상위 & 하위 5개 매장)</span></h3>
@@ -300,7 +291,8 @@
             <!-- 3-2. 관리자 검색 영역 -->
             <div id="admin_search_container" class="hidden space-y-4">
                 <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 space-y-2">
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <!-- [수정완료] 직무 필터 추가 (grid-cols-2 md:grid-cols-5) -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                         <select id="adminSearchMonth" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">전체 월</option></select>
                         <select id="adminSearchDiv" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">구분 전체</option><option value="리빙">리빙</option><option value="집테리어">집테리어</option></select>
                         <select id="adminSearchStore" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">매장 전체</option>
@@ -308,6 +300,13 @@
                             <optgroup label="로드샵"><option value="강남">강남</option><option value="용산">용산</option><option value="수원">수원</option><option value="고양">고양</option><option value="용인">용인</option><option value="기흥">기흥</option><option value="대전">대전</option><option value="울산">울산</option><option value="광주">광주</option><option value="부산">부산</option><option value="동부산">동부산</option></optgroup>
                         </select>
                         <select id="adminSearchDay" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">요일 전체</option><option value="평일">평일</option><option value="주말/공휴일">주말/공휴일</option></select>
+                        <!-- 직무 필터 추가 -->
+                        <select id="adminSearchRole" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
+                            <option value="all">직무 전체</option>
+                            <option value="리빙영업">리빙영업</option>
+                            <option value="집테리어영업">집테리어영업</option>
+                            <option value="지원부서">지원부서</option>
+                        </select>
                     </div>
                     <div class="flex gap-2 pt-1 border-t border-gray-100">
                         <input type="text" id="adminSearchText" placeholder="평가자 이름 (예: 홍길동)" class="flex-1 h-10 px-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm" onkeypress="if(event.key==='Enter') updateAdminSearchList()">
@@ -327,15 +326,6 @@
                 <div id="adminDetailContent" class="space-y-4"></div>
             </div>
         </div>
-        
-        <!-- ========================================== -->
-        <!-- [수정완료] 플로팅 버튼: 매장 도면 보기 -->
-        <!-- ========================================== -->
-        <button onclick="openPdfModal()" class="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-4 h-14 flex items-center justify-center shadow-[0_10px_25px_-5px_rgba(79,70,229,0.5)] z-40 transition-transform transform hover:scale-105 gap-2" title="매장 도면 보기">
-            <!-- 지도/도면 느낌의 아이콘 -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-            <span class="font-bold text-sm sm:text-base">매장 도면</span>
-        </button>
 
         <footer class="text-center py-8">
             <button onclick="checkAdminPassword()" class="text-xs text-gray-300 hover:text-gray-500 underline transition-colors">관리자 전용 페이지</button>
@@ -345,23 +335,6 @@
 
     <!-- 스크립트 로직 -->
     <script>
-        // =========================================================================
-        // 👇 여기에 Supabase Storage에 올리신 PDF 공개 링크(Public URL)를 넣어주세요.
-        // =========================================================================
-        const PDF_STORE_MAP_URL = "https://agysoivrjsbbtiqlsxud.supabase.co/storage/v1/object/public/Photo/info..pdf"; // (여기를 지우고 붙여넣기 하세요!)
-
-        function openPdfModal() {
-            document.getElementById('pdfViewer').src = PDF_STORE_MAP_URL;
-            document.getElementById('pdfNewTabLink').href = PDF_STORE_MAP_URL;
-            document.getElementById('pdf_modal').classList.remove('hidden');
-        }
-
-        function closePdfModal() {
-            document.getElementById('pdfViewer').src = ""; 
-            document.getElementById('pdf_modal').classList.add('hidden');
-        }
-        // =========================================================================
-
         const SUPABASE_URL = 'https://agysoivrjsbbtiqlsxud.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFneXNvaXZyanNiYnRpcWxzeHVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3OTA3NzIsImV4cCI6MjEwMzM2Njc3Mn0.pMfOlCkNeF1pbuyTUHBzOgC5FziWOeXeKMTH16vARJw';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -523,7 +496,7 @@
             editModeId = null;
             document.getElementById('evaluationForm').reset();
             toggleEvalForm();
-            document.getElementById('headerTitle').innerText = '접객서비스 모니터링';
+            document.getElementById('headerTitle').innerText = '접객 모니터링';
             document.getElementById('submitBtn').innerText = '평가 제출하기';
             const btns = document.getElementById('editActionBtns');
             btns.classList.add('hidden'); btns.classList.remove('grid', 'grid-cols-2');
@@ -878,7 +851,7 @@
                 if(viewDash) {
                     viewDash.classList.remove('hidden');
                     void viewDash.offsetWidth; 
-                    setTimeout(() => { updateAdminDash(); }, 50); 
+                    setTimeout(() => { updateAdminDash(); }, 100); 
                 }
             } else {
                 if(btnDash) btnDash.className = "flex-1 py-2 text-sm font-bold rounded text-gray-500 hover:text-gray-700 transition-colors";
@@ -1058,11 +1031,13 @@
             updateAdminDash();
         }
 
+        // [수정완료] 직무 필터링 로직 추가
         function updateAdminSearchList() {
             const mon = document.getElementById('adminSearchMonth') ? document.getElementById('adminSearchMonth').value : 'all';
             const div = document.getElementById('adminSearchDiv') ? document.getElementById('adminSearchDiv').value : 'all';
             const store = document.getElementById('adminSearchStore') ? document.getElementById('adminSearchStore').value : 'all';
             const day = document.getElementById('adminSearchDay') ? document.getElementById('adminSearchDay').value : 'all';
+            const role = document.getElementById('adminSearchRole') ? document.getElementById('adminSearchRole').value : 'all';
             const text = document.getElementById('adminSearchText') ? document.getElementById('adminSearchText').value.trim() : '';
 
             const filtered = allDashboardData.filter(d => {
@@ -1070,6 +1045,7 @@
                 if(div !== 'all' && d.division !== div) return false;
                 if(store !== 'all' && d.store_name !== store) return false;
                 if(day !== 'all' && d.day_type !== day) return false;
+                if(role !== 'all' && d.emp_role !== role) return false;
                 if(text !== '' && (!d.emp_name || !d.emp_name.includes(text))) return false;
                 return true;
             });
