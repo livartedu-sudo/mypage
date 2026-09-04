@@ -76,7 +76,8 @@
         <!-- 1. 폼 뷰 -->
         <!-- ========================================== -->
         <div id="form_view">
-            <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6">
+            <!-- [수정완료] novalidate 속성을 추가하여 브라우저의 조용한 먹통 버그 방지 -->
+            <form id="evaluationForm" onsubmit="handleSubmit(event)" class="p-4 space-y-6" novalidate>
                 <!-- 기본 정보 섹션 -->
                 <section class="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200 shadow-sm">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -184,7 +185,6 @@
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <select id="dashboardMonthFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm"><option value="all">전체 월</option></select>
                         <select id="dashboardDivisionFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm"><option value="all">전체 구분</option><option value="리빙">리빙</option><option value="집테리어">집테리어</option></select>
-                        <!-- [수정완료] 주말/공휴일 -> 주말 -->
                         <select id="dashboardDayTypeFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm"><option value="all">평일/주말</option><option value="평일">평일</option><option value="주말">주말</option></select>
                         <select id="dashboardStoreFilter" onchange="updateDashboardUI()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-900 bg-white shadow-sm text-sm">
                             <option value="all">전체 매장</option>
@@ -285,7 +285,6 @@
                             <optgroup label="백화점"><option value="더현서">더현서</option><option value="무역">무역</option><option value="목동">목동</option><option value="천호">천호</option><option value="미아">미아</option><option value="신촌">신촌</option><option value="가산">가산</option><option value="판교">판교</option><option value="킨텍스">킨텍스</option><option value="중동">중동</option><option value="송도">송도</option><option value="김포">김포</option><option value="스페이스원">스페이스원</option><option value="충청">충청</option><option value="대구">대구</option><option value="대전아울렛">대전아울렛</option></optgroup>
                             <optgroup label="로드샵"><option value="강남">강남</option><option value="용산">용산</option><option value="수원">수원</option><option value="고양">고양</option><option value="용인">용인</option><option value="기흥">기흥</option><option value="대전">대전</option><option value="울산">울산</option><option value="광주">광주</option><option value="부산">부산</option><option value="동부산">동부산</option></optgroup>
                         </select>
-                        <!-- [수정완료] 주말/공휴일 -> 주말 -->
                         <select id="adminSearchDay" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="all">요일 전체</option><option value="평일">평일</option><option value="주말">주말</option></select>
                         <select id="adminSearchRole" onchange="updateAdminSearchList()" class="h-10 px-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
                             <option value="all">직무 전체</option>
@@ -431,8 +430,6 @@
             if (error) return alert("조회 오류");
             
             myEvalsData = data || [];
-            
-            // [호환성 패치] 불러온 데이터 중 과거의 '주말/공휴일'을 '주말'로 내부 변환
             myEvalsData.forEach(d => { if(d.day_type === '주말/공휴일') d.day_type = '주말'; });
 
             document.getElementById('myEvalListContainer').classList.remove('hidden');
@@ -556,14 +553,33 @@
             return cnt > 0 ? Math.round((sum / cnt) * 20) : 0;
         }
 
+        // [이중 잠금장치 개선] 누락된 항목을 구체적으로 알려주고 스크롤 이동
         async function handleSubmit(event) {
             event.preventDefault();
 
-            let isValid = true;
+            // 필드명 매핑 (친절한 안내 메시지용)
+            const fieldNames = {
+                'division': '구분',
+                'storeName': '매장명',
+                'visitTime': '방문 일시',
+                'crowdedness': '매장 혼잡도(고객 유무)',
+                'staffCount': '근무 인원',
+                'empId': '평가자 사번',
+                'empName': '평가자 성명',
+                'empRole': '평가자 직무',
+                'editPassword': '수정 비밀번호',
+                'evalType': '평가 종류'
+            };
+
             const requiredIds = ['division', 'storeName', 'visitTime', 'crowdedness', 'staffCount', 'empId', 'empName', 'empRole', 'editPassword', 'evalType'];
             
+            let isValid = true;
+            let missingFields = [];
+            let firstMissingElement = null;
+
             for (let id of requiredIds) {
                 const el = document.getElementById(id);
+                // 비밀번호는 수정 모드일 때 빈칸 허용
                 if (editModeId && id === 'editPassword' && el.value.trim() === '') {
                     el.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
                     continue;
@@ -571,6 +587,8 @@
 
                 if (!el || !el.value || el.value.trim() === '') {
                     el.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+                    missingFields.push(fieldNames[id]);
+                    if (!firstMissingElement) firstMissingElement = el; // 첫 번째 누락된 요소 저장
                     isValid = false;
                 } else {
                     el.classList.remove('border-red-500', 'ring-2', 'ring-red-500');
@@ -578,11 +596,14 @@
             }
 
             if (!isValid) {
-                alert('빨간색으로 표시된 필수 항목을 모두 입력해주세요.');
+                alert(`다음 필수 항목이 누락되었습니다. 확인해주세요:\n\n- ${missingFields.join('\n- ')}`);
+                if (firstMissingElement) {
+                    firstMissingElement.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    firstMissingElement.focus();
+                }
                 return;
             }
 
-            // [패치] 방문 일시에서 요일(일=0, 토=6) 추출해 주말/평일 자동 판별
             const vt = document.getElementById('visitTime').value;
             const dtDate = new Date(vt);
             const dayIndex = dtDate.getDay();
@@ -605,7 +626,13 @@
             for (let q of visibleQuestions) {
                 const selected = document.querySelector(`input[name="${q.id}"]:checked`);
                 if (!selected) {
-                    alert(`모든 문항을 빠짐없이 선택해주세요. (미체크 문항: ${q.title})`);
+                    alert(`모든 문항을 빠짐없이 선택해주세요.\n(미체크 문항: ${q.title})`);
+                    const qContainer = document.querySelector(`div[data-qid="${q.id}"]`);
+                    if (qContainer) {
+                        qContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        qContainer.classList.add('border-red-500', 'ring-2', 'ring-red-500');
+                        setTimeout(() => qContainer.classList.remove('border-red-500', 'ring-2', 'ring-red-500'), 2000);
+                    }
                     return;
                 }
                 const val = selected.value;
@@ -668,7 +695,7 @@
                     division: document.getElementById('division').value,
                     store_name: document.getElementById('storeName').value,
                     visit_time: vt,
-                    day_type: autoDayType, // 자동 계산된 '주말' 또는 '평일' 
+                    day_type: autoDayType, 
                     crowdedness: document.getElementById('crowdedness').value,
                     staff_count: document.getElementById('staffCount').value,
                     emp_id: document.getElementById('empId').value.trim(),
